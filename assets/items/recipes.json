@@ -1,0 +1,167 @@
+{
+    "recipes": {
+        "fried_eggs": {
+            "type": "cooked",
+            "cooking_time": 5,
+            "ingredients": {
+                "egg": 2
+            },
+            "result": "fried_eggs",
+            "result_amount": 1
+        },
+        "fried_meat": {
+            "type": "cooked",
+            "cooking_time": 10,
+            "ingredients": {
+                "chiken_wing": 1,
+                "chiken_leg": 1
+            },
+            "result": "fried_meat",
+            "result_amount": 1
+        },
+        "steak": {
+            "type": "cooked",
+            "cooking_time": 15,
+            "ingredients": {
+                "fresh_steak": 1,
+                "salt": 1
+            },
+            "result": "steak",
+            "result_amount": 1
+        },
+      
+        "vegetable_soup": {
+            "type": "cooked",
+            "cooking_time": 25,
+            "ingredients": {
+                "water": 1,
+                "carrot": 2,
+                "tomato": 1,
+                "salt": 1
+            },
+            "result": "soup_1",
+            "result_amount": 3
+        },
+        "mushroom_soup": {
+            "type": "cooked",
+            "cooking_time": 20,
+            "ingredients": {
+                "water": 1,
+                "mushroom": 2,
+                "champignon": 1,
+                "salt": 1
+            },
+            "result": "soup_2",
+            "result_amount": 3
+        },
+        "fish_soup": {
+            "type": "cooked",
+            "cooking_time": 30,
+            "ingredients": {
+                "water": 1,
+                "fish": 1,
+                "carrot": 1,
+                "salt": 1
+            },
+            "result": "soup_1",
+            "result_amount": 3
+        },
+        "tomato_paste": {
+            "type": "cooked",
+            "cooking_time": 15,
+            "ingredients": {
+                "tomato": 3,
+                "salt": 1
+            },
+            "result": "paste",
+            "result_amount": 1
+        },
+        "bread": {
+            "type": "baking",
+            "cooking_time": 30,
+            "ingredients": {
+                "flour": 2,
+                "water": 1,
+                "salt": 1
+            },
+            "result": "bread",
+            "result_amount": 1
+        },
+        "pie": {
+            "type": "baking",
+            "cooking_time": 40,
+            "ingredients": {
+                "flour": 2,
+                "egg": 1,
+                "apple": 2,
+                "sugar": 1
+            },
+            "result": "pie",
+            "result_amount": 1
+        },
+        "berry_pie": {
+            "type": "baking",
+            "cooking_time": 40,
+            "ingredients": {
+                "flour": 2,
+                "egg": 1,
+                "strawberry": 3,
+                "sugar": 1
+            },
+            "result": "pie",
+            "result_amount": 1
+        },
+        "cupcake": {
+            "type": "baking",
+            "cooking_time": 25,
+            "ingredients": {
+                "flour": 1,
+                "egg": 1,
+                "milk": 1,
+                "sugar": 1
+            },
+            "result": "cupcake",
+            "result_amount": 2
+        },
+        "chocolate_cupcake": {
+            "type": "baking",
+            "cooking_time": 25,
+            "ingredients": {
+                "flour": 1,
+                "egg": 1,
+                "milk": 1,
+                "sugar": 1,
+                "powder": 1
+            },
+            "result": "chocolate_cupcake",
+            "result_amount": 2
+        },
+        "cheese": {
+            "type": "ingredient",
+            "cooking_time": 60,
+            "ingredients": {
+                "milk": 3
+            },
+            "result": "cheese",
+            "result_amount": 1
+        },
+        "butter": {
+            "type": "ingredient",
+            "cooking_time": 30,
+            "ingredients": {
+                "milk": 2
+            },
+            "result": "butter",
+            "result_amount": 1
+        },
+        "flour": {
+            "type": "ingredient",
+            "cooking_time": 10,
+            "ingredients": {
+                "wheat": 2
+            },
+            "result": "flour",
+            "result_amount": 1
+        }
+    }
+} 

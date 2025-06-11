@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="6" height="9" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="5">
+ <tileset firstgid="1" source="../../assets/tilesets/background.tsx"/>
+ <tileset firstgid="241" source="../../assets/tilesets/walls.tsx"/>
+ <tileset firstgid="529" source="../../assets/tilesets/connect.tsx"/>
+ <tileset firstgid="961" source="../../assets/tilesets/big_decor.tsx"/>
+ <tileset firstgid="1217" source="../../assets/tilesets/decoration_c.tsx"/>
+ <layer id="1" name="background" width="6" height="9">
+  <data encoding="csv">
+0,0,0,0,0,0,
+0,21,0,22,22,0,
+0,6,6,6,6,0,
+0,6,6,6,6,0,
+0,6,6,6,6,0,
+0,6,6,6,6,0,
+0,6,6,6,6,0,
+0,37,37,38,38,0,
+0,0,0,0,0,0
+</data>
+ </layer>
+ <layer id="2" name="walls" width="6" height="9">
+  <data encoding="csv">
+0,725,725,725,725,0,
+702,244,245,245,246,700,
+702,292,293,293,294,700,
+702,0,0,0,0,700,
+702,0,0,0,0,700,
+702,0,0,0,0,700,
+702,0,0,0,0,700,
+702,725,0,0,725,700,
+0,0,0,0,0,0
+</data>
+ </layer>
+ <layer id="3" name="windows" width="6" height="9">
+  <data encoding="csv">
+0,0,0,0,0,0,
+0,0,967,0,0,0,
+0,0,983,0,0,0,
+0,0,0,0,0,0,
+0,0,0,0,0,0,
+0,0,0,0,0,0,
+0,0,0,0,0,0,
+0,0,0,0,0,0,
+0,0,0,0,0,0
+</data>
+ </layer>
+ <layer id="4" name="bed" width="6" height="9">
+  <data encoding="csv">
+0,0,0,0,0,0,
+0,0,0,0,0,0,
+0,0,0,0,0,0,
+0,0,0,0,1392,0,
+0,0,0,0,1408,0,
+0,0,0,0,1424,0,
+0,0,0,0,0,0,
+0,0,0,0,0,0,
+0,0,0,0,0,0
+</data>
+ </layer>
+ <objectgroup id="6" name="exits">
+  <object id="4" name="room1" x="95" y="381.5" width="97" height="37.5"/>
+ </objectgroup>
+ <objectgroup id="5" name="enteries">
+  <object id="1" name="room1_entry" x="141.5" y="196.5">
+   <point/>
+  </object>
+ </objectgroup>
+</map>

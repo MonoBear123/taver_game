@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="5" height="8" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="7">
+ <tileset firstgid="1" source="../../assets/tilesets/background.tsx"/>
+ <tileset firstgid="241" source="../../assets/tilesets/decoration_c.tsx"/>
+ <tileset firstgid="497" source="../../assets/tilesets/walls.tsx"/>
+ <tileset firstgid="785" source="../../assets/tilesets/connect.tsx"/>
+ <layer id="1" name="background" width="5" height="8">
+  <data encoding="csv">
+0,0,0,0,0,
+0,8,8,8,0,
+0,8,8,8,0,
+0,23,24,24,0,
+0,8,8,8,0,
+0,8,8,8,0,
+0,39,8,40,0,
+0,0,0,0,0
+</data>
+ </layer>
+ <layer id="2" name="walls" width="5" height="8">
+  <data encoding="csv">
+0,981,981,981,0,
+958,500,501,502,956,
+958,548,549,550,956,
+958,0,0,0,956,
+958,0,0,0,956,
+958,0,0,0,956,
+958,981,0,981,956,
+0,0,0,0,0
+</data>
+ </layer>
+ <objectgroup id="5" name="exits">
+  <object id="3" name="toilet" x="90.5833" y="334.833" width="55.3333" height="45.3333"/>
+ </objectgroup>
+ <objectgroup id="4" name="enteries">
+  <object id="1" name="toilet_entry" x="121.417" y="237.584">
+   <point/>
+  </object>
+ </objectgroup>
+</map>

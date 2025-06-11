@@ -1,0 +1,98 @@
+{
+    "current_level": 1,
+    "saved_state": {
+        "stove_1": {
+            "is_lit": false
+        },
+        "storage_1": {
+            "is_open": false,
+            "items": [
+                "\u043a\u0440\u0443\u0436\u043a\u0430",
+                "\u0442\u0430\u0440\u0435\u043b\u043a\u0430"
+            ]
+        },
+        "toilet_1": {
+            "is_occupied": false
+        }
+    },
+    "levels": [
+        {
+            "level": 1,
+            "objects": [
+                {
+                    "type": "stove",
+                    "id": "stove_1",
+                    "x": 400,
+                    "y": 500,
+                    "animations": {
+                        "idle": [
+                            "stove_1"
+                        ],
+                        "lit": [
+                            "stove_empty_1",
+                            "stove_empty_2",
+                            "stove_empty_3"
+                        ],
+                        "cooking": [
+                            "stove_food_1",
+                            "stove_food_2",
+                            "stove_food_3"
+                        ]
+                    }
+                },
+                {
+                    "type": "storage",
+                    "id": "storage_1",
+                    "x": 300,
+                    "y": 150,
+                    "animations": {
+                        "idle": [
+                            "big_box"
+                        ]
+                    }
+                },
+                {
+                    "type": "toilet",
+                    "id": "toilet_1",
+                    "x": 450,
+                    "y": 500,
+                    "animations": {
+                        "idle": [
+                            "toilet"
+                        ],
+                        "occupied": [
+                            "toilet"
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "level": 2,
+            "objects": [
+                {
+                    "type": "table",
+                    "id": "table_1",
+                    "x": 200,
+                    "y": 300,
+                    "animations": {
+                        "idle": [
+                            "table_1"
+                        ]
+                    }
+                },
+                {
+                    "type": "storage",
+                    "id": "storage_2",
+                    "x": 400,
+                    "y": 250,
+                    "animations": {
+                        "idle": [
+                            "big_box"
+                        ]
+                    }
+                }
+            ]
+        }
+    ]
+}

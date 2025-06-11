@@ -1,0 +1,76 @@
+{
+    "baking": {
+        "type": "food",
+        "category": "baked_goods",
+        "items": {
+            "pie": "baking_01.png",
+            "cupcake": "baking_04.png",
+            "chocolate_cupcake": "baking_05.png",
+            "bread": "baking_08.png"
+        }
+    },
+    "cooked": {
+        "type": "food",
+        "category": "prepared_food",
+        "items": {
+            "fried_eggs": "cooked_01.png",
+            "fried_meat": "cooked_07.png",
+            "steak": "cooked_12.png",
+            "soup_1": "cooked_13.png",
+            "soup_2": "cooked_14.png",
+            "paste": "cooked_15.png"
+        }
+    },
+    "ingredients": {
+        "type": "ingredient",
+        "category": "ingredients",
+        "items": {
+            "milk": "dairy_01.png",
+            "butter": "dairy_03.png",
+            "cheese": "dairy_04.png",
+            "egg": "egg_01.png",
+            "tomato": "fruits_10.png",
+            "apple": "fruits_13.png",
+            "strawberry": "fruits_30.png",
+            "wheat": "baking_16",
+            "flour": "baking_17",
+            "salt": "baking_19",
+            "sugar": "baking_21",
+            "ant_head": "insect_01.png",
+            "bee_head": "insect_03.png",
+            "larva": "insect_07.png",
+            "worm": "insect_09.png",
+            "chiken_wing": "meat_01.png",
+            "chiken_leg": "meat_02.png",
+            "chiken_cheast": "meat_03.png",
+            "fresh_steak": "meat_06.png",
+            "monster_steak": "monster_01.png",
+            "monster_tail": "monster_05.png",
+            "monster_wing": "monster_07.png",
+            "mushroom": "mushrooms_10.png",
+            "champignon": "mushrooms_13.png",
+            "red_potion": "potions_01.png",
+            "water": "potions_05.png",
+            "fish": "seafood_06.png",
+            "fish_cheast": "seafood_08.png",
+            "shrimp": "seafood_20.png",
+            "powder": "spices_03.png",
+            "grass": "plant_08.png",
+            "sweet_pepper": "veggie_01.png",
+            "hot_pepper": "veggie_04.png",
+            "egg_fruit": "veggie_11.png",
+            "carrot": "veggie_14.png",
+            "garlik": "veggie_19.png",
+            "pumpkin": "veggie_25.png"
+        }
+    },
+    "drinks": {
+        "type": "consumable",
+        "category": "beverages",
+        "items": {
+            "bear": "drinks_04.png",
+            "wine": "drinks_05.png",
+            "cognac": "drinks_06.png"
+        }
+    }
+} 
