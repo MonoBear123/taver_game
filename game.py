@@ -19,6 +19,7 @@ class Game:
         self.splash_screen = SplashScreen(self)
         self.states.append(self.splash_screen)
         self.tmx_cache = {}
+        self.player = None
 
     def load_tmx(self, scene_name: str):
         if scene_name not in self.tmx_cache:

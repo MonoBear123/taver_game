@@ -59,11 +59,25 @@ class Scene(State):
         self.camera = Camera(self)
         self.transition = Transition(self)
 
+        self.setup_player()
         self.create_scene()
         self.room = self.create_room()
 
+    def setup_player(self):
+        print("setup_player")
+        self.player = Player.get_instance(
+            game=self.game,
+            scene=self,
+            groups=[self.update_sprites, self.drawn_sprites],
+            pos=(0, 0), 
+            z='characters',
+            name='player'
+        )
+        self.player.set_scene(self, [self.update_sprites, self.drawn_sprites])
+        self.target = self.player
     def go_to_scene(self):
         self.room.save_state()
+        self.player.save_state()
         Scene(self.game, self.next_scene, self.entry_point).enter_state()
         
     def create_room(self):
@@ -104,15 +118,10 @@ class Scene(State):
         
     def draw(self, screen):
         self.camera.draw(screen=screen, group=self.drawn_sprites)
-        self.draw_energy_bar()  
         self.transition.draw(screen)
-        self.target.draw(screen)
+        self.player.draw(screen)
         
-    def draw_energy_bar(self):
-        if hasattr(self.player, 'energy'):
-            energy_text = f"Энергия: {int(self.player.energy)}/{int(self.player.max_energy)}"
-            energy_font = pygame.font.Font(FONT, 24) 
-            self.game.render_text(energy_text, COLOURS['white'], energy_font,(120,30), centralised=True)
+    
 
 class ObjectGenerator:
     def __init__(self, scene):
@@ -200,12 +209,8 @@ class ObjectGenerator:
     def generate_enteries(self):
         for obj in self.tmx_data.get_layer_by_name("enteries"):
             if obj.name == self.scene.entry_point:
-                self.scene.player = Player(
-                    self.scene.game, self.scene,
-                    [self.scene.update_sprites, self.scene.drawn_sprites],
-                    (obj.x, obj.y), 'characters', 'player'
-                )
-                self.scene.target = self.scene.player
+                self.scene.player.set_position((obj.x, obj.y))
+                
     
     def generate_exits(self):
         for obj in self.tmx_data.get_layer_by_name("exits"):

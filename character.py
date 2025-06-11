@@ -5,6 +5,7 @@ from config import *
 class NPC(pygame.sprite.Sprite):
     def __init__(self,game,scene, groups,pos,z,name):
         super().__init__(groups)
+        self.groups = groups
         self.game = game
         self.scene = scene
         self.z = z
@@ -21,7 +22,17 @@ class NPC(pygame.sprite.Sprite):
         self.fric = -15
         self.move = {'left': False,'right':False,'up':False,'down':False}
         self.state = Idle(self)
-
+    def set_position(self, pos):
+        self.pos = pos
+        self.rect.topleft = pos
+        self.hitbox.topleft = pos
+    def set_scene(self, scene, groups):
+        self.scene = scene
+        for group in self.groups:
+            group.remove(self)
+        self.groups = groups
+        for group in groups:
+            group.add(self)
     def import_images(self,path):
         self.animations = self.game.get_animations(path)
 

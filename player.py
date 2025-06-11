@@ -1,25 +1,35 @@
 from character import NPC, INPUTS
-from config import SCENE_DATA, PLAYER_STATE
+from config import SCENE_DATA, PLAYER_STATE, FONT, COLOURS
 from inventory import Inventory
 import pygame
 
 class Player(NPC):
+    _instance = None
+
+    @classmethod
+    def get_instance(cls, game=None, scene=None, groups=None, pos=(0, 0), z='characters', name='player'):
+        if cls._instance is None:
+            if game is None or scene is None or groups is None:
+                raise ValueError("Cannot create Player instance without game, scene, and groups on first call")
+            cls._instance = cls(game, scene, groups, pos, z, name)
+        return cls._instance
     def __init__(self, game, scene, groups, pos,z, name):
         super().__init__(game, scene, groups, pos,z, name)
         self.state = Idle(self)
-        
-        self.max_energy = PLAYER_STATE['max_energy']
+        self.inventory = Inventory((5, 4))
         if PLAYER_STATE['first_spawn']:
-            self.energy = self.max_energy
-            PLAYER_STATE['first_spawn'] = False
-        else:
-            self.energy = PLAYER_STATE['energy']
-            
+            self.inventory.create_test_items()
+        self.inventory.load_from_state()
+        self.max_energy = PLAYER_STATE['max_energy']
+        self.energy = PLAYER_STATE['energy']
         self.low_energy_threshold = 20 
         self.exhausted_threshold = 5
-        self.inventory = Inventory((5, 4))
-        self.inventory.create_test_items()
+        self._initialized = True
 
+   
+    def save_state(self):
+        PLAYER_STATE['energy'] = self.energy
+        PLAYER_STATE['inventory'] = self.inventory
     def movement(self):
         energy_multiplier = self.get_energy_multiplier()
         effective_force = self.force * energy_multiplier
@@ -97,6 +107,13 @@ class Player(NPC):
 
     def draw(self, screen):
         self.inventory.draw_all(screen)
+        self.draw_energy_bar() 
+
+    def draw_energy_bar(self):
+        if hasattr(self, 'energy'):
+            energy_text = f"Энергия: {int(self.energy)}/{int(self.max_energy)}"
+            energy_font = pygame.font.Font(FONT, 24) 
+            self.game.render_text(energy_text, COLOURS['white'], energy_font,(120,30), centralised=True)
 
 class Idle:
     def __init__(self, player):

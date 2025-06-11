@@ -25,8 +25,8 @@ SCENE_DATA = {
 }
 
 PLAYER_STATE = {
-    'energy': 100.0,
-    'max_energy': 100.0,
+    'energy': 100,
+    'max_energy': 100,
     'first_spawn': True,
-    'inventory': None  # Будет заполнено при первой инициализации инвентаря
+    'inventory': None 
 }
