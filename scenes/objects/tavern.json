@@ -2,7 +2,11 @@
     "current_level": 1,
     "saved_state": {
         "stove_1": {
-            "is_lit": false
+            "is_lit": false,
+            "is_cooking": false,
+            "fluid_amount": 0,
+            "cooking_timer": 0,
+            "fluid_consumption_timer": 0
         },
         "storage_1": {
             "is_open": false,
@@ -12,7 +16,8 @@
             ]
         },
         "toilet_1": {
-            "is_occupied": false
+            "is_occupied": false,
+            "occupation_timer": 0
         }
     },
     "levels": [

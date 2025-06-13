@@ -2,7 +2,11 @@
     "current_level": 1,
     "saved_state": {
         "stove_1": {
-            "is_lit": false
+            "is_lit": false,
+            "is_cooking": false,
+            "fluid_amount": 0,
+            "cooking_timer": 0,
+            "fluid_consumption_timer": 0
         },
         "storage_1": {
             "is_open": false,
@@ -11,6 +15,11 @@
                 "\u0441\u043a\u043e\u0432\u043e\u0440\u043e\u0434\u0430",
                 "\u043d\u043e\u0436"
             ]
+        },
+        "wood_1": {
+            "is_used": true,
+            "cooldown_timer": 40.560000000000464,
+            "fuel_amount": 20
         }
     },
     "levels": [
@@ -20,8 +29,8 @@
                 {
                     "type": "stove",
                     "id": "stove_1",
-                    "x": 100,
-                    "y": 200,
+                    "x": 96,
+                    "y": 432,
                     "animations": {
                         "idle": [
                             "stove_1"
@@ -41,11 +50,22 @@
                 {
                     "type": "storage",
                     "id": "storage_1",
-                    "x": 150,
-                    "y": 200,
+                    "x": 144,
+                    "y": 180,
                     "animations": {
                         "idle": [
                             "big_box"
+                        ]
+                    }
+                },
+                {
+                    "type": "wood",
+                    "id": "wood_1",
+                    "x": 432,
+                    "y": 512,
+                    "animations": {
+                        "idle": [
+                            "wood"
                         ]
                     }
                 }

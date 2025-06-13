@@ -72,5 +72,12 @@
             "wine": "drinks_05.png",
             "cognac": "drinks_06.png"
         }
+    },
+    "cooking_items": {
+        "items": {
+            "wood": "wood.png"
+        }
     }
+
+
 } 

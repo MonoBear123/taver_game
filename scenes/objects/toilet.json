@@ -2,7 +2,8 @@
     "current_level": 1,
     "saved_state": {
         "toilet_1": {
-            "is_occupied": false
+            "is_occupied": false,
+            "occupation_timer": 0
         }
     },
     "levels": [

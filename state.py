@@ -1,11 +1,10 @@
 import pygame
 from config import *
-
-from pytmx.util_pygame import load_pygame
 from camera import Camera
 from player import Player
+from pytmx.util_pygame import load_pygame
 from transition import Transition
-from room import TavernRoom, KitchenRoom, ToiletRoom
+from room import TavernRoom, KitchenRoom, ToiletRoom, RoomManager, RestRoom, Room
 from entity_component_system import (
     Entity, SpriteComponent,
     CollisionComponent, ShapedCollisionComponent
@@ -51,20 +50,22 @@ class Scene(State):
         self.current_scene = current_scene
         self.entry_point = entry_point
         self.tmx_data = self.game.load_tmx(self.current_scene)
+
         self.exit_sprites = pygame.sprite.Group()
         self.update_sprites = pygame.sprite.Group()
         self.drawn_sprites = pygame.sprite.Group()
         self.block_sprites = pygame.sprite.Group()
         self.interactive_sprites = pygame.sprite.Group()
+
         self.camera = Camera(self)
         self.transition = Transition(self)
 
         self.setup_player()
         self.create_scene()
-        self.room = self.create_room()
+        self.room = self.setup_room()
+        print(self.room)
 
     def setup_player(self):
-        print("setup_player")
         self.player = Player.get_instance(
             game=self.game,
             scene=self,
@@ -76,20 +77,27 @@ class Scene(State):
         self.player.set_scene(self, [self.update_sprites, self.drawn_sprites])
         self.target = self.player
     def go_to_scene(self):
+        
         self.room.save_state()
         self.player.save_state()
         Scene(self.game, self.next_scene, self.entry_point).enter_state()
         
-    def create_room(self):
+    def setup_room(self):
         room_classes = {
             "tavern": TavernRoom,
-            "room1": TavernRoom,
+            "room1": RestRoom,
             "kitchen": KitchenRoom,
             "toilet": ToiletRoom
         }
         
         json_path = f'scenes/objects/{self.current_scene}.json'
-        return room_classes[self.current_scene](json_path, self)
+        room_class = room_classes.get(self.current_scene, Room)
+        
+        return self.game.rooms.get_room(
+            json_path=json_path,
+            scene=self,
+            room_class=room_class
+        )
     def create_scene(self):
         generator = ObjectGenerator(self)
         layer_handlers = {
@@ -108,18 +116,45 @@ class Scene(State):
         
 
 
+    def draw_time(self):
+            time, day = self.game.game_time.get_time_string()
+            time_font = pygame.font.Font(FONT, 12)
+            day_font =  pygame.font.Font(FONT, 24)
+            self.game.render_text(day, COLOURS['white'], day_font,(570,20), centralised=True)
+            
+            self.game.render_text(time, COLOURS['white'], time_font,(570,40), centralised=True)
+
+
     def update(self, dt):
-        self.update_sprites.update(dt)
+        for sprite in self.update_sprites:
+            if hasattr(sprite, 'components'):
+                if not any(c.requires_game_time for c in sprite.components.values()):
+                    sprite.update(dt)
+            else:
+                sprite.update(dt)
+
+        if hasattr(self.game, 'time') and self.game.time is not None:
+            for sprite in self.update_sprites:
+                if hasattr(sprite, 'components') and any(
+                    c.requires_game_time for c in sprite.components.values()
+                ):
+                    sprite.update(dt, self.game.time)
+        else:
+            print(f"Ошибка: self.game.time is None для update_sprites в Scene.update")
+
         self.exit_sprites.update(dt)
         self.camera.update(dt, self.target)
-        self.transition.update(dt)  
-        self.room.update(dt)
+        self.transition.update(dt)
+
+        
+          
         
         
     def draw(self, screen):
         self.camera.draw(screen=screen, group=self.drawn_sprites)
         self.transition.draw(screen)
         self.player.draw(screen)
+        self.draw_time()
         
     
 

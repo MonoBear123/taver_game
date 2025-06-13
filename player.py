@@ -14,6 +14,9 @@ class Player(NPC):
             cls._instance = cls(game, scene, groups, pos, z, name)
         return cls._instance
     def __init__(self, game, scene, groups, pos,z, name):
+        if hasattr(self, '_initialized'):
+            return
+        print("Player initialized")
         super().__init__(game, scene, groups, pos,z, name)
         self.state = Idle(self)
         self.inventory = Inventory((5, 4))
@@ -111,9 +114,9 @@ class Player(NPC):
 
     def draw_energy_bar(self):
         if hasattr(self, 'energy'):
-            energy_text = f"Энергия: {int(self.energy)}/{int(self.max_energy)}"
-            energy_font = pygame.font.Font(FONT, 24) 
-            self.game.render_text(energy_text, COLOURS['white'], energy_font,(120,30), centralised=True)
+            energy_text = f"Энергия: {int(self.energy)}:{int(self.max_energy)}"
+            energy_font = pygame.font.Font(FONT, 18) 
+            self.game.render_text(energy_text, COLOURS['white'], energy_font,(80,20), centralised=True)
 
 class Idle:
     def __init__(self, player):

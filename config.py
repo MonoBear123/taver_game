@@ -28,5 +28,8 @@ PLAYER_STATE = {
     'energy': 100,
     'max_energy': 100,
     'first_spawn': True,
-    'inventory': None 
+    'inventory': None,
+    'time_hours': 8,
+    'time_minutes': 0,
+    'day': 0
 }

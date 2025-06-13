@@ -1,8 +1,8 @@
 import pygame
-
-from croper import *
-from config import *
-from state import *
+from room import RoomManager
+from config import WIN_WIDTH, WIN_HEIGHT, FONT, TILE_SIZE, CURSOR_SIZE, INPUTS
+from game_time import GameTimeManager
+from state import SplashScreen, load_pygame
 import sys
 import os
 
@@ -19,8 +19,8 @@ class Game:
         self.splash_screen = SplashScreen(self)
         self.states.append(self.splash_screen)
         self.tmx_cache = {}
-        self.player = None
-
+        self.game_time = GameTimeManager()
+        self.rooms = RoomManager()
     def load_tmx(self, scene_name: str):
         if scene_name not in self.tmx_cache:
             self.tmx_cache[scene_name] = load_pygame(f'scenes/maps/{scene_name}.tmx')
@@ -149,7 +149,10 @@ class Game:
     def loop(self):
         while self.running:
             dt = self.clock.tick(self.fps)/1000
+            self.game_time.update(dt)
             self.get_inputs()
+            print(self.game_time)
+            self.rooms.update_all_rooms(dt, self.game_time)
             self.states[-1].update(dt)
             self.states[-1].draw(self.screen)
             self.custom_cursor(self.screen)
