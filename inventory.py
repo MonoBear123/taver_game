@@ -2,70 +2,15 @@ import json
 from typing import Dict, List, Optional, Tuple, Union
 import pygame
 from config import INPUTS, PLAYER_STATE
-class InventorySlot:
-    def __init__(self, item_id: str = None, amount: int = 0, max_stack: int = 24):
-        self.item_id = item_id
-        self.amount = amount
-        self.max_stack = max_stack
-    
-    def is_empty(self) -> bool:
-        return self.item_id is None or self.amount == 0
-    
-    def can_add(self, amount: int = 1) -> bool:
-        return self.amount + amount <= self.max_stack
-    
-    def add(self, amount: int = 1) -> int:
-        if self.is_empty():
-            self.amount = min(amount, self.max_stack)
-            return amount - self.amount
-        
-        if not self.can_add(amount):
-            overflow = (self.amount + amount) - self.max_stack
-            self.amount = self.max_stack
-            return overflow
-        
-        self.amount += amount
-        return 0
-    
-    def remove(self, amount: int = 1) -> int:
-        if self.is_empty() or amount <= 0:
-            return 0
-        
-        if amount >= self.amount:
-            removed = self.amount
-            self.clear()
-            return removed
-        
-        self.amount -= amount
-        return amount
-    
-    def clear(self):
-        self.item_id = None
-        self.amount = 0
-    
-    def to_dict(self) -> dict:
-        """Преобразует слот в словарь для сохранения"""
-        return {
-            'item_id': self.item_id,
-            'amount': self.amount,
-            'max_stack': self.max_stack
-        }
-    
-    @classmethod
-    def from_dict(cls, data: dict) -> 'InventorySlot':
-        """Создает слот из словаря"""
-        return cls(
-            item_id=data.get('item_id'),
-            amount=data.get('amount', 0),
-            max_stack=data.get('max_stack', 64)
-        )
+from slot import InventorySlot
+from drag_manager import drag_manager
 
 class Inventory:
     SLOT_SIZE = 40          
     PADDING = 4     
     ITEM_SIZE = 32 
     
-    def __init__(self, size: Tuple[int, int] = (8, 4)):
+    def __init__(self, size: Tuple[int, int] = (8, 4), inventory_type: str = 'player'):
         self.width, self.height = size
         self.slots: List[InventorySlot] = [InventorySlot() for _ in range(self.width * self.height)]
         self.selected_slot = None
@@ -74,19 +19,19 @@ class Inventory:
         
         self.dragging_slot: Optional[InventorySlot] = None
         self.dragging_from_index: Optional[int] = None
-        self.mouse_pos: Tuple[int, int] = (0, 0)
+        self._pick_return_index: Optional[int] = None
         
-        with open('assets/items/items_data.json', 'r') as f:
-            self.items_data = json.load(f)
-            
-        with open('assets/items/recipes.json', 'r') as f:
-            self.recipes_data = json.load(f)['recipes']
+        self.external_drop_target = None
+
+        self.inventory_type = inventory_type
         
-        self.item_sprites: Dict[str, pygame.Surface] = {}
+        if self.inventory_type == 'player':
+            self.load_from_state()
         
-        self.font = pygame.font.Font(None, 12)  
+        drag_manager.register(self)
         
-        self.load_from_state()
+        self.active_slot_index = 0
+        self.is_visible = False
         
     def get_slot(self, x: int, y: int) -> Optional[InventorySlot]:
         if 0 <= x < self.width and 0 <= y < self.height:
@@ -103,6 +48,9 @@ class Inventory:
                 x, y = self.get_slot_position(i)
                 result.append((x, y, slot))
         return result
+    
+    def has_item(self, item_id: str) -> bool:
+        return any(slot.item_id == item_id and not slot.is_empty() for slot in self.slots)
     
     def count_item(self, item_id: str) -> int:
         return sum(slot.amount for slot in self.slots if slot.item_id == item_id)
@@ -139,126 +87,40 @@ class Inventory:
         self.save_to_state()
         return result
     
-    def remove_item(self, item_id: str, amount: int = 1) -> int:
-        removed = 0
-        for slot in self.slots:
-            if slot.item_id == item_id:
-                removed += slot.remove(amount - removed)
-                if removed >= amount:
-                    break
+    def remove_item(self, item_id: str, amount: int = 1) -> bool:
+        to_remove = amount
+        # Сначала пытаемся удалить из неполных стаков
+        for slot in sorted([s for s in self.slots if s.item_id == item_id and s.amount < s.max_amount], key=lambda s: s.amount):
+            if to_remove == 0: break
+            removed_count = min(to_remove, slot.amount)
+            slot.remove(removed_count)
+            to_remove -= removed_count
+
+        # Затем из полных стаков
+        if to_remove > 0:
+            for slot in [s for s in self.slots if s.item_id == item_id]:
+                if to_remove == 0: break
+                removed_count = min(to_remove, slot.amount)
+                slot.remove(removed_count)
+                to_remove -= removed_count
         
         self.save_to_state()
-        return removed
-    
-    
+        return to_remove == 0
     
     def get_item_sprite(self, item_id: str) -> Optional[pygame.Surface]:
-        if item_id in self.item_sprites:
-            return self.item_sprites[item_id]
-            
-        sprite_path = None
-        for category in self.items_data.values():
-            if 'items' in category and item_id in category['items']:
-                item_data = category['items'][item_id]
-                sprite_name = item_data if isinstance(item_data, str) else item_data.get('sprite')
-                if sprite_name:
-                    if not sprite_name.endswith('.png'):
-                        sprite_name += '.png'
-                    sprite_path = f"assets/items/{sprite_name}"
-                break
-        
-        if sprite_path:
-            
-            sprite = pygame.image.load(sprite_path).convert_alpha()
-            if sprite.get_size() != (self.ITEM_SIZE, self.ITEM_SIZE):
-                sprite = pygame.transform.scale(sprite, (self.ITEM_SIZE, self.ITEM_SIZE))
-            self.item_sprites[item_id] = sprite
-            return sprite
-        
-        return 
+        from item_renderer import get_item_sprite  
+        sprite = get_item_sprite(item_id, self.ITEM_SIZE)
+        return sprite
 
     def create_test_items(self):
         
-        self.add_item((self.height - 1) * self.width + 0, "carrot", 5)  
+        self.add_item((self.height - 1) * self.width + 0, "egg", 5)  
         self.add_item((self.height - 1) * self.width + 1, "hot_pepper", 1) 
         self.add_item((self.height - 1) * self.width + 2, "sweet_pepper", 3)  
         self.add_item((self.height - 1) * self.width + 3, "pumpkin", 2)  
         self.add_item((self.height - 1) * self.width + 4, "garlik", 10) 
         
 
-    def draw_partial(self, surface: pygame.Surface, pos: Tuple[int, int], start_row: int, end_row: int):
-        for y in range(start_row, end_row):
-            for x in range(self.width):
-                slot_index = y * self.width + x
-                if slot_index >= len(self.slots):
-                    continue
-                    
-                slot = self.slots[slot_index]
-                rect = pygame.Rect(
-                    pos[0] + x * (self.SLOT_SIZE + self.PADDING),
-                    pos[1] + (y - start_row) * (self.SLOT_SIZE + self.PADDING),
-                    self.SLOT_SIZE,
-                    self.SLOT_SIZE
-                )
-                
-                is_hotbar = y == self.height - 1
-                bg_color = (70, 70, 70)
-                pygame.draw.rect(surface, bg_color, rect)
-                
-                if slot_index == self.selected_slot:
-                    pygame.draw.rect(surface, (255,255,255), rect, 2)
-                   
-                    border_color = (120, 120, 120) if is_hotbar else (100, 100, 100)
-                    pygame.draw.rect(surface, border_color, rect, 1)
-                
-                if not slot.is_empty():
-                    sprite = self.get_item_sprite(slot.item_id)
-                    if sprite:
-                        scaled_sprite = pygame.transform.scale(sprite, (self.ITEM_SIZE, self.ITEM_SIZE))
-                        sprite_x = rect.x + (self.SLOT_SIZE - self.ITEM_SIZE) // 2
-                        sprite_y = rect.y + (self.SLOT_SIZE - self.ITEM_SIZE) // 2
-                        surface.blit(scaled_sprite, (sprite_x, sprite_y))
-                        
-                        if slot.amount > 1:
-                            text = self.font.render(str(slot.amount), True, (255, 255, 255))
-                            text_x = rect.right - text.get_width() - 1
-                            text_y = rect.bottom - text.get_height()
-                            surface.blit(text, (text_x, text_y))
-
-    def draw_all(self, screen):
-        hotbar_width = self.width * (self.SLOT_SIZE + self.PADDING)
-        hotbar_x = (screen.get_width() - hotbar_width) // 2
-        hotbar_y = screen.get_height() - (self.SLOT_SIZE + self.PADDING + 20)
-        self.draw_partial(screen, (hotbar_x, hotbar_y), self.height - 1, self.height)
-
-        if self.visible:
-            overlay = pygame.Surface(screen.get_size())
-            overlay.fill((0, 0, 0))
-            overlay.set_alpha(128)
-            screen.blit(overlay, (0, 0))
-            
-            inventory_width = self.width * (self.SLOT_SIZE + self.PADDING)
-            inventory_height = (self.height - 1) * (self.SLOT_SIZE + self.PADDING)
-            inventory_x = (screen.get_width() - inventory_width) // 2
-            inventory_y = (screen.get_height() - inventory_height - (self.SLOT_SIZE + self.PADDING + 20)) // 2
-            self.draw_partial(screen, (inventory_x, inventory_y), 0, self.height - 1)
-            
-        if self.dragging_slot and not self.dragging_slot.is_empty():
-            sprite = self.get_item_sprite(self.dragging_slot.item_id)
-            if sprite:
-                sprite_x = self.mouse_pos[0] - self.ITEM_SIZE // 2
-                sprite_y = self.mouse_pos[1] - self.ITEM_SIZE // 2
-                screen.blit(sprite, (sprite_x, sprite_y))
-                
-                if self.dragging_slot.amount > 1:
-                    text = self.font.render(str(self.dragging_slot.amount), True, (255, 255, 255))
-                    text_x = sprite_x + self.ITEM_SIZE - text.get_width() - 1
-                    text_y = sprite_y + self.ITEM_SIZE - text.get_height()
-                    screen.blit(text, (text_x, text_y))
-
-    def draw(self, surface: pygame.Surface, pos: Tuple[int, int]):
-        self.draw_partial(surface, pos, 0, self.height)
-    
     def handle_click(self, pos: Tuple[int, int]) -> Optional[Tuple[int, int]]:
         for i in range(len(self.slots)):
             x, y = self.get_slot_position(i)
@@ -276,39 +138,29 @@ class Inventory:
         return None 
 
     def update(self):
-        if INPUTS['tab'] and not self.tab_pressed:
-            self.visible = not self.visible
-            self.tab_pressed = True
-        elif not INPUTS['tab']:
-            self.tab_pressed = False
+        if self.inventory_type == 'player':
+            if INPUTS['tab'] and not self.tab_pressed:
+                self.visible = not self.visible
+                self.tab_pressed = True
+            elif not INPUTS['tab']:
+                self.tab_pressed = False
 
-        for i in range(1, 6):
-            if INPUTS[str(i)]:
-                self.selected_slot = (self.height - 1) * self.width + (i - 1)
+            for i in range(1, 6):
+                if INPUTS[str(i)]:
+                    self.selected_slot = (self.height - 1) * self.width + (i - 1)
 
-        if INPUTS['scroll_up']:
-            current_slot = self.selected_slot if self.selected_slot is not None else self.width * (self.height - 1)
-            if current_slot >= self.width * (self.height - 1):
-                self.selected_slot = ((current_slot - self.width * (self.height - 1) - 1) % self.width) + self.width * (self.height - 1)
-            INPUTS['scroll_up'] = False
+            if INPUTS['scroll_up']:
+                current_slot = self.selected_slot if self.selected_slot is not None else self.width * (self.height - 1)
+                if current_slot >= self.width * (self.height - 1):
+                    self.selected_slot = ((current_slot - self.width * (self.height - 1) - 1) % self.width) + self.width * (self.height - 1)
+                INPUTS['scroll_up'] = False
 
-        if INPUTS['scroll_down']:
-            current_slot = self.selected_slot if self.selected_slot is not None else self.width * (self.height - 1)
-            if current_slot >= self.width * (self.height - 1):
-                self.selected_slot = ((current_slot - self.width * (self.height - 1) + 1) % self.width) + self.width * (self.height - 1)
-            INPUTS['scroll_down'] = False
+            if INPUTS['scroll_down']:
+                current_slot = self.selected_slot if self.selected_slot is not None else self.width * (self.height - 1)
+                if current_slot >= self.width * (self.height - 1):
+                    self.selected_slot = ((current_slot - self.width * (self.height - 1) + 1) % self.width) + self.width * (self.height - 1)
+                INPUTS['scroll_down'] = False
             
-        if INPUTS['mouse_pos']:
-            self.mouse_pos = INPUTS['mouse_pos']
-            
-        if INPUTS['left_click']:
-            if not self.dragging_slot:
-                slot_index = self.get_slot_at_pos(self.mouse_pos)
-                if slot_index is not None:
-                    self.start_dragging(slot_index)
-        elif self.dragging_slot:
-            slot_index = self.get_slot_at_pos(self.mouse_pos)
-            self.stop_dragging(slot_index)
 
     def get_selected_item(self) -> Optional[InventorySlot]:
         if self.selected_slot is not None:
@@ -322,6 +174,7 @@ class Inventory:
                 self.dragging_slot = InventorySlot(slot.item_id, slot.amount)
                 self.dragging_from_index = slot_index
                 slot.clear()
+                self.drag_started_with_left = True
                 return True
         return False
     
@@ -329,9 +182,22 @@ class Inventory:
         if not self.dragging_slot:
             return False
             
+        mouse_pos = INPUTS.get('mouse_pos', (0, 0))
+
         if slot_index is None or slot_index < 0 or slot_index >= len(self.slots):
-            self.slots[self.dragging_from_index].item_id = self.dragging_slot.item_id
-            self.slots[self.dragging_from_index].amount = self.dragging_slot.amount
+            accepted = False
+            if callable(self.external_drop_target):
+                accepted = self.external_drop_target(self.dragging_slot, mouse_pos)
+
+            if not accepted:
+                self.slots[self.dragging_from_index].item_id = self.dragging_slot.item_id
+                self.slots[self.dragging_from_index].amount = self.dragging_slot.amount
+            else:
+                self.dragging_slot = None
+                self.dragging_from_index = None
+                self.drag_started_with_left = False
+                self.save_to_state()
+                return True
         else:
             target_slot = self.slots[slot_index]
             if target_slot.is_empty():
@@ -352,38 +218,73 @@ class Inventory:
                 
         self.dragging_slot = None
         self.dragging_from_index = None
+        self.drag_started_with_left = False
         
         self.save_to_state()
         return True
 
+    def _get_base_positions(self) -> Tuple[Optional[Tuple[int, int]], Optional[Tuple[int, int]]]:
+        try:
+            screen = pygame.display.get_surface()
+            if not screen:
+                return None, None
+            screen_width, screen_height = screen.get_size()
+        except ImportError:
+            screen_width, screen_height = 640, 480 
+
+
+        if self.inventory_type == 'player':
+            hotbar_width = self.width * (self.SLOT_SIZE + self.PADDING)
+            hotbar_x = (screen_width - hotbar_width) // 2
+            hotbar_y = screen_height - (self.SLOT_SIZE + self.PADDING + 20)
+            
+            inventory_width = self.width * (self.SLOT_SIZE + self.PADDING)
+            inventory_height = (self.height - 1) * (self.SLOT_SIZE + self.PADDING)
+            inventory_x = (screen_width - inventory_width) // 2
+            inventory_y = (screen_height - inventory_height - (self.SLOT_SIZE + self.PADDING + 20)) // 2
+            return (inventory_x, inventory_y), (hotbar_x, hotbar_y)
+        
+        elif self.inventory_type == 'storage':
+            inventory_width = self.width * (self.SLOT_SIZE + self.PADDING)
+            inventory_height = self.height * (self.SLOT_SIZE + self.PADDING)
+            inventory_x = (screen_width - inventory_width) // 2
+            inventory_y = (screen_height - inventory_height) // 2 - 50
+            return (inventory_x, inventory_y), None
+        
+        return None, None
+
+
     def get_slot_at_pos(self, pos: Tuple[int, int]) -> Optional[int]:
-        hotbar_width = self.width * (self.SLOT_SIZE + self.PADDING)
-        hotbar_x = (pygame.display.get_surface().get_width() - hotbar_width) // 2
-        hotbar_y = pygame.display.get_surface().get_height() - (self.SLOT_SIZE + self.PADDING + 20)
+        main_pos, hotbar_pos = self._get_base_positions()
         
-        inventory_width = self.width * (self.SLOT_SIZE + self.PADDING)
-        inventory_height = (self.height - 1) * (self.SLOT_SIZE + self.PADDING)
-        inventory_x = (pygame.display.get_surface().get_width() - inventory_width) // 2
-        inventory_y = (pygame.display.get_surface().get_height() - inventory_height - (self.SLOT_SIZE + self.PADDING + 20)) // 2
+        if main_pos:
+            rows_to_check = self.height
+            is_main_inventory_visible = self.inventory_type != 'player' or self.visible
+            
+            if is_main_inventory_visible:
+                if self.inventory_type == 'player':
+                    rows_to_check = self.height - 1
+
+                for y in range(rows_to_check):
+                    for x in range(self.width):
+                        slot_index = y * self.width + x
+                        slot_rect_x = main_pos[0] + x * (self.SLOT_SIZE + self.PADDING)
+                        slot_rect_y = main_pos[1] + y * (self.SLOT_SIZE + self.PADDING)
+                        if (slot_rect_x <= pos[0] < slot_rect_x + self.SLOT_SIZE and
+                            slot_rect_y <= pos[1] < slot_rect_y + self.SLOT_SIZE):
+                            return slot_index
         
-        for y in range(self.height):
+        if hotbar_pos and self.inventory_type == 'player':
+            y = self.height - 1
             for x in range(self.width):
                 slot_index = y * self.width + x
-                
-                if y == self.height - 1:  # Хотбар
-                    slot_x = hotbar_x + x * (self.SLOT_SIZE + self.PADDING)
-                    slot_y = hotbar_y
-                else:  # Основной инвентарь
-                    if not self.visible:
-                        continue
-                    slot_x = inventory_x + x * (self.SLOT_SIZE + self.PADDING)
-                    slot_y = inventory_y + y * (self.SLOT_SIZE + self.PADDING)
-                
-                slot_rect = pygame.Rect(slot_x, slot_y, self.SLOT_SIZE, self.SLOT_SIZE)
-                if slot_rect.collidepoint(pos):
+                slot_rect_x = hotbar_pos[0] + x * (self.SLOT_SIZE + self.PADDING)
+                slot_rect_y = hotbar_pos[1] + (y - (self.height-1)) * (self.SLOT_SIZE + self.PADDING)
+                if (slot_rect_x <= pos[0] < slot_rect_x + self.SLOT_SIZE and
+                    slot_rect_y <= pos[1] < slot_rect_y + self.SLOT_SIZE):
                     return slot_index
-        
-        return None 
+
+        return None
 
     def to_dict(self) -> dict:
         return {
@@ -401,21 +302,133 @@ class Inventory:
         self.height = data.get('height', self.height)
         self.selected_slot = data.get('selected_slot')
         
-        # Загружаем слоты
         slots_data = data.get('slots', [])
         self.slots = []
         for slot_data in slots_data:
             self.slots.append(InventorySlot.from_dict(slot_data))
         
-        # Если количество слотов не совпадает, добавляем пустые
         while len(self.slots) < self.width * self.height:
             self.slots.append(InventorySlot())
     
     def save_to_state(self) -> None:
-        """Сохраняет состояние инвентаря в PLAYER_STATE"""
-        PLAYER_STATE['inventory'] = self.to_dict()
+        if self.inventory_type == 'player':
+            PLAYER_STATE['inventory'] = self.to_dict()
     
     def load_from_state(self) -> None:
-        """Загружает состояние инвентаря из PLAYER_STATE"""
-        if 'inventory' in PLAYER_STATE:
+        if self.inventory_type == 'player' and 'inventory' in PLAYER_STATE:
             self.from_dict(PLAYER_STATE['inventory']) 
+
+    def is_hover(self, mouse_pos):  
+        if self.inventory_type == 'storage' and not self.visible:
+            return False
+        return self.get_slot_at_pos(mouse_pos) is not None
+
+    def pick_item(self, mouse_pos, right_click):  
+        idx = self.get_slot_at_pos(mouse_pos)
+        if idx is None:
+            return None
+        slot = self.slots[idx]
+        if slot.is_empty() or slot.is_ghost: 
+            return None
+
+        self._pick_return_index = idx
+        
+        slot.is_ghost = True
+
+        if right_click:
+            picked = InventorySlot(slot.item_id, 1)
+            return picked
+        else:
+            picked = InventorySlot(slot.item_id, slot.amount)
+            return picked
+
+    def drop_item(self, drag_slot, mouse_pos, right_click):  
+        idx = self.get_slot_at_pos(mouse_pos)
+        source_idx = self._pick_return_index
+        if source_idx is not None and 0 <= source_idx < len(self.slots):
+            self.slots[source_idx].is_ghost = False
+
+        if idx is None:
+            return False
+        
+        target = self.slots[idx]
+
+        if right_click:
+            if source_idx == idx:
+                drag_slot.amount = 0 
+                return True
+
+            placed_one = False
+            if target.is_empty():
+                target.item_id = drag_slot.item_id
+                target.add(1)
+                placed_one = True
+            elif target.item_id == drag_slot.item_id and target.can_add(1):
+                target.add(1)
+                placed_one = True
+            
+            if placed_one:
+                drag_slot.remove(1)
+            else:
+                return False
+        else:
+            if source_idx == idx:
+                return True
+
+            if target.is_empty():
+                target.item_id = drag_slot.item_id
+                target.amount = drag_slot.amount
+                drag_slot.amount = 0
+            elif target.item_id == drag_slot.item_id:
+                overflow = target.add(drag_slot.amount)
+                drag_slot.amount = overflow
+            else:
+                target_item_id, target_amount = target.item_id, target.amount
+                target.item_id, target.amount = drag_slot.item_id, drag_slot.amount
+                drag_slot.item_id, drag_slot.amount = target_item_id, target_amount
+
+        self.save_to_state()
+        return True
+
+    def finalize_pick(self, final_drag_slot: Optional['InventorySlot'], accepted: bool, right_click: bool):
+        source_idx = self._pick_return_index
+        if source_idx is None or not (0 <= source_idx < len(self.slots)):
+            self._pick_return_index = None
+            return
+
+        source_slot = self.slots[source_idx]
+        source_slot.is_ghost = False
+
+        if not accepted:
+            pass
+        elif right_click:
+            source_slot.remove(1)
+        else:
+            if final_drag_slot and final_drag_slot.amount > 0:
+                source_slot.item_id = final_drag_slot.item_id
+                source_slot.amount = final_drag_slot.amount
+            else:
+                source_slot.clear()
+        
+        self.save_to_state()
+        self._pick_return_index = None
+
+    def return_item(self, drag_slot):  
+        if self._pick_return_index is not None:
+            target = self.slots[self._pick_return_index]
+            if target.is_empty():
+                target.item_id = drag_slot.item_id
+                target.amount = drag_slot.amount
+                drag_slot.amount = 0
+            elif target.item_id == drag_slot.item_id and target.can_add(drag_slot.amount):
+                overflow = target.add(drag_slot.amount)
+                drag_slot.amount = overflow
+
+        if getattr(drag_slot, 'amount', 0) > 0:
+            overflow = self.add_item(drag_slot.item_id, drag_slot.item_id, drag_slot.amount)
+            drag_slot.amount = overflow
+
+        self.save_to_state() 
+
+    def get_active_slot(self):
+        return self.slots[self.active_slot_index] 

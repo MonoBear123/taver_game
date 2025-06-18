@@ -1,10 +1,15 @@
 import pygame
-from room import RoomManager
-from config import WIN_WIDTH, WIN_HEIGHT, FONT, TILE_SIZE, CURSOR_SIZE, INPUTS
-from game_time import GameTimeManager
-from state import SplashScreen, load_pygame
+from room import room_manager
+from config import WIN_WIDTH, WIN_HEIGHT, FONT, TILE_SIZE, CURSOR_SIZE, INPUTS, COLOURS
+from game_time import game_time
+from state import SplashScreen, load_pygame, MainMenu
 import sys
 import os
+from drag_manager import drag_manager
+from ui_manager import ui_manager
+from recipe_manager import recipe_manager
+from item_manager import item_manager
+from player import Player
 
 
 class Game:
@@ -16,11 +21,34 @@ class Game:
         self.running = True
         self.fps = 60
         self.states = []
-        self.splash_screen = SplashScreen(self)
-        self.states.append(self.splash_screen)
         self.tmx_cache = {}
-        self.game_time = GameTimeManager()
-        self.rooms = RoomManager()
+        self.debug = True
+
+        self.states = []
+        MainMenu(self).enter_state()
+
+    def save_game(self):
+        """Централизованная функция сохранения игры."""
+        # Сохранение состояния игрока
+        player = Player.get_instance()
+        if player:
+            player.save_state()
+
+        # Сохранение состояния всех комнат
+        for room in room_manager.rooms.values():
+            room.save_state()
+
+        # Сохранение игрового времени
+        game_time.save_state()
+        
+        # Сохранение текущей сцены, чтобы знать, куда вернуться
+        current_scene = self.get_current_state()
+        if hasattr(current_scene, 'current_scene'):
+            from config import PLAYER_STATE
+            PLAYER_STATE['last_scene'] = current_scene.current_scene
+
+        print("--- ИГРА СОХРАНЕНА ---")
+
     def load_tmx(self, scene_name: str):
         if scene_name not in self.tmx_cache:
             self.tmx_cache[scene_name] = load_pygame(f'scenes/maps/{scene_name}.tmx')
@@ -149,14 +177,27 @@ class Game:
     def loop(self):
         while self.running:
             dt = self.clock.tick(self.fps)/1000
-            self.game_time.update(dt)
+            game_time.update(dt)
             self.get_inputs()
-            print(self.game_time)
-            self.rooms.update_all_rooms(dt, self.game_time)
-            self.states[-1].update(dt)
-            self.states[-1].draw(self.screen)
-            self.custom_cursor(self.screen)
-            pygame.display.update()
+            drag_manager.update()
+            room_manager.update_all_rooms(dt)
+            
+            current_state = self.get_current_state()
+            current_state.update(dt)
+            
+            self.screen.fill(COLOURS['black'])
+            
+            ui_manager.set_context(self.screen, current_state)
+            
+            current_state.draw(self.screen)
+            ui_manager.draw()
+            
+            pygame.display.flip()
+
+    def get_current_state(self):
+        if not self.states:
+            return None
+        return self.states[-1]
 
 
 if __name__ == "__main__":

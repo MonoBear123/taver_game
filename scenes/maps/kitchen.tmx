@@ -1,9 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="11" height="13" tilewidth="48" tileheight="48" infinite="0" nextlayerid="6" nextobjectid="6">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="11" height="13" tilewidth="48" tileheight="48" infinite="0" nextlayerid="8" nextobjectid="6">
  <tileset firstgid="1" source="../../assets/tilesets/walls.tsx"/>
  <tileset firstgid="289" source="../../assets/tilesets/connect.tsx"/>
  <tileset firstgid="721" source="../../assets/tilesets/big_decor.tsx"/>
  <tileset firstgid="977" source="../../assets/tilesets/background.tsx"/>
+ <tileset firstgid="1217" name="decorations_with_hitbox" tilewidth="48" tileheight="48" tilecount="256" columns="16">
+  <image source="../../assets/tilesets/Fantasy_Inside_D.png" trans="161420" width="768" height="768"/>
+ </tileset>
+ <tileset firstgid="1473" name="decorations_with_hitbox_two" tilewidth="48" tileheight="48" tilecount="256" columns="16">
+  <image source="../../../../Downloads/Winlu Fantasy Interior/Winlu Fantasy Interior/Remaster/tilesets/Fantasy_Inside_Shops.png" trans="161420" width="768" height="768"/>
+ </tileset>
+ <tileset firstgid="1729" name="Fantasy_Inside_C" tilewidth="48" tileheight="48" tilecount="256" columns="16">
+  <image source="../../../../Downloads/Winlu Fantasy Interior/Winlu Fantasy Interior/Remaster/tilesets/Fantasy_Inside_C.png" trans="161420" width="768" height="768"/>
+ </tileset>
+ <tileset firstgid="1985" source="../../assets/tilesets/decoration_c.tsx"/>
  <layer id="2" name="background" width="11" height="13">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,
@@ -35,6 +45,40 @@
 465,0,0,0,0,0,0,0,0,0,463,
 465,0,0,0,0,0,0,0,0,0,463,
 465,488,488,488,0,0,0,488,488,488,463,
+0,0,0,0,0,0,0,0,0,0,0
+</data>
+ </layer>
+ <layer id="6" name="decorations" width="11" height="13">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,0,
+0,1344,0,1388,1389,0,0,1329,1330,1331,0,
+0,0,0,1404,1405,1484,1485,0,1433,1390,0,
+0,1333,0,0,1320,1500,1501,0,1449,1278,0,
+0,1349,1684,1685,1336,1516,1517,0,1465,1294,0,
+0,0,1700,1701,0,2058,2059,2060,0,1367,0,
+0,1366,1716,1717,0,2074,2075,2076,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,
+0,2096,0,0,0,0,0,0,0,0,0,
+0,2112,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0
+</data>
+ </layer>
+ <layer id="7" name="cosmetics" width="11" height="13">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,
+0,0,1445,1380,0,0,0,0,0,0,0,
+0,0,0,0,0,1413,1429,1381,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,
+0,1355,0,0,0,0,0,0,0,0,0,
+0,1361,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,1355,0,
+0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>

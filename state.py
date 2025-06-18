@@ -4,11 +4,13 @@ from camera import Camera
 from player import Player
 from pytmx.util_pygame import load_pygame
 from transition import Transition
-from room import TavernRoom, KitchenRoom, ToiletRoom, RoomManager, RestRoom, Room
+from room import room_manager, TavernRoom, KitchenRoom, ToiletRoom, RestRoom, Room
 from entity_component_system import (
     Entity, SpriteComponent,
-    CollisionComponent, ShapedCollisionComponent
+    CollisionComponent, ShapedCollisionComponent, StoveComponent,
+    StorageComponent, ChairComponent
 )
+from object_factory import ObjectFactory
 
 class State:
     def __init__(self,game):
@@ -44,6 +46,56 @@ class SplashScreen(State):
         self.game.render_text("Tavern",COLOURS['white'],self.game.font,(WIN_WIDTH/2,WIN_HEIGHT/2))
     
 
+class MainMenu(State):
+    def __init__(self, game):
+        super().__init__(game)
+        self.options = ["Продолжить", "Новая игра", "Выход"]
+        self.selected_option = 0
+        self.up_pressed = False
+        self.down_pressed = False
+        self.background_image = None
+        try:
+            self.background_image = pygame.image.load('assets/ui/main_menu_background.png').convert()
+            self.background_image = pygame.transform.scale(self.background_image, (WIN_WIDTH, WIN_HEIGHT))
+        except pygame.error:
+            pass
+
+    def update(self, dt):
+        if INPUTS['up'] and not self.up_pressed:
+            self.selected_option = (self.selected_option - 1) % len(self.options)
+            self.up_pressed = True
+        if not INPUTS['up']:
+            self.up_pressed = False
+
+        if INPUTS['down'] and not self.down_pressed:
+            self.selected_option = (self.selected_option + 1) % len(self.options)
+            self.down_pressed = True
+        if not INPUTS['down']:
+            self.down_pressed = False
+            
+        if INPUTS.get('interact') or INPUTS.get('space'):
+            if self.selected_option == 0:
+                pass
+            elif self.selected_option == 1:
+                Scene(self.game, 'tavern', 'enter').enter_state()
+            elif self.selected_option == 2:
+                self.game.running = False
+
+    def draw(self, screen):
+        if self.background_image:
+            screen.blit(self.background_image, (0, 0))
+        else:
+            screen.fill(COLOURS['dark_purple'])
+
+        for i, option in enumerate(self.options):
+            color = COLOURS['green'] if i == self.selected_option else COLOURS['white']
+            self.game.render_text(
+                option,
+                color,
+                self.game.font,
+                (WIN_WIDTH / 2, WIN_HEIGHT / 2 - 50 + i * 50)
+            )
+
 class Scene(State):
     def __init__(self, game, current_scene, entry_point):
         State.__init__(self, game)
@@ -59,12 +111,51 @@ class Scene(State):
 
         self.camera = Camera(self)
         self.transition = Transition(self)
+        self.factory = ObjectFactory(self)
 
         self.setup_player()
-        self.create_scene()
         self.room = self.setup_room()
+        
+        self.factory.create_from_tmx_layers()
+        self.factory.create_from_room_data(self.room)
+        
+        self.adopt_room_npcs()
         print(self.room)
 
+    def get_sprite_groups(self):
+        return [self.update_sprites, self.drawn_sprites, self.block_sprites]
+
+    def adopt_room_objects(self):
+        if not self.room:
+            return
+        for obj in self.room.objects:
+            if obj.has_component(ChairComponent):
+                groups_to_add = [
+                    self.interactive_sprites,
+                    self.drawn_sprites,
+                    self.update_sprites
+                ]
+            else:
+                groups_to_add = [
+                    self.interactive_sprites,
+                    self.drawn_sprites,
+                    self.update_sprites,
+                    self.block_sprites
+                ]
+            obj.add(groups_to_add)
+
+    def adopt_room_npcs(self):
+        if hasattr(self.room, 'customers'):
+            for npc in self.room.customers:
+                npc.set_scene(self, [self.update_sprites, self.drawn_sprites, self.interactive_sprites])
+        self.target = self.player
+    def go_to_scene(self):
+        
+        self.player.save_state()
+        for room in room_manager.rooms.values():
+            room.save_state()
+        Scene(self.game, self.next_scene, self.entry_point).enter_state()
+        
     def setup_player(self):
         self.player = Player.get_instance(
             game=self.game,
@@ -75,13 +166,6 @@ class Scene(State):
             name='player'
         )
         self.player.set_scene(self, [self.update_sprites, self.drawn_sprites])
-        self.target = self.player
-    def go_to_scene(self):
-        
-        self.room.save_state()
-        self.player.save_state()
-        Scene(self.game, self.next_scene, self.entry_point).enter_state()
-        
     def setup_room(self):
         room_classes = {
             "tavern": TavernRoom,
@@ -93,68 +177,32 @@ class Scene(State):
         json_path = f'scenes/objects/{self.current_scene}.json'
         room_class = room_classes.get(self.current_scene, Room)
         
-        return self.game.rooms.get_room(
+        return room_manager.get_room(
             json_path=json_path,
             scene=self,
             room_class=room_class
         )
-    def create_scene(self):
-        generator = ObjectGenerator(self)
-        layer_handlers = {
-            'background': generator.generate_background,
-            'decorations': generator.generate_decorations,
-            'objects': generator.generate_objects,
-            'walls': generator.generate_objects,
-            'lighting': generator.generate_lighting,
-            'windows': generator.generate_windows,
-            'foreground': generator.generate_foreground,
-            'enteries': generator.generate_enteries,
-            'exits': generator.generate_exits
-        }
-        for layer in self.tmx_data.layers:
-            layer_handlers[layer.name]()
+
+    def recreate_room_objects(self):
+        for sprite in self.interactive_sprites:
+            sprite.kill()
         
-
-
-    def draw_time(self):
-            time, day = self.game.game_time.get_time_string()
-            time_font = pygame.font.Font(FONT, 12)
-            day_font =  pygame.font.Font(FONT, 24)
-            self.game.render_text(day, COLOURS['white'], day_font,(570,20), centralised=True)
-            
-            self.game.render_text(time, COLOURS['white'], time_font,(570,40), centralised=True)
-
+        self.factory.create_from_room_data(self.room)
 
     def update(self, dt):
-        for sprite in self.update_sprites:
-            if hasattr(sprite, 'components'):
-                if not any(c.requires_game_time for c in sprite.components.values()):
-                    sprite.update(dt)
-            else:
-                sprite.update(dt)
-
-        if hasattr(self.game, 'time') and self.game.time is not None:
-            for sprite in self.update_sprites:
-                if hasattr(sprite, 'components') and any(
-                    c.requires_game_time for c in sprite.components.values()
-                ):
-                    sprite.update(dt, self.game.time)
-        else:
-            print(f"Ошибка: self.game.time is None для update_sprites в Scene.update")
-
-        self.exit_sprites.update(dt)
+        self.update_sprites.update(dt)
         self.camera.update(dt, self.target)
         self.transition.update(dt)
 
+        if self.room:
+            self.room.update(dt)
         
           
         
         
     def draw(self, screen):
-        self.camera.draw(screen=screen, group=self.drawn_sprites)
+        self.camera.draw(screen=screen)
         self.transition.draw(screen)
-        self.player.draw(screen)
-        self.draw_time()
         
     
 
@@ -186,9 +234,9 @@ class ObjectGenerator:
         for x, y, image in self.tmx_data.get_layer_by_name("background").tiles():
             self.create_basic_entity((x*TILE_SIZE, y*TILE_SIZE), image, 'background')
     
-    def generate_decorations(self):
-        for x, y, image in self.tmx_data.get_layer_by_name("decorations").tiles():
-            self.create_basic_entity((x*TILE_SIZE, y*TILE_SIZE), image, 'decorations', colorkey=(255, 255, 255))
+    def generate_cosmetics(self):
+        for x, y, image in self.tmx_data.get_layer_by_name("cosmetics").tiles():
+            self.create_basic_entity((x*TILE_SIZE, y*TILE_SIZE), image, 'objects', colorkey=(255, 255, 255))
     
     def generate_objects(self):
         if "walls" in [layer.name for layer in self.tmx_data.layers]:
@@ -223,17 +271,20 @@ class ObjectGenerator:
     
     def generate_windows(self):
         for x, y, image in self.tmx_data.get_layer_by_name("windows").tiles():
+            pixel_array = pygame.PixelArray(image)
+            pixel_array.replace((255, 255, 255), (0, 94, 162))
+            del pixel_array
             self.create_basic_entity((x*TILE_SIZE, y*TILE_SIZE), image, 'windows', colorkey=(0, 94, 162))
     
     
-    def generate_foreground(self):
-        for x, y, image in self.tmx_data.get_layer_by_name("foreground").tiles():
+    def generate_decorations(self):
+        for x, y, image in self.tmx_data.get_layer_by_name('decorations').tiles():
             mask = pygame.mask.from_surface(image)
             if mask.count() > 0:
                 self.create_basic_entity(
                     (x*TILE_SIZE, y*TILE_SIZE),
                     image,
-                    'foreground',
+                    'decorations',
                     use_collision=True,
                     shaped_collision=True,
                     colorkey=(255, 255, 255)

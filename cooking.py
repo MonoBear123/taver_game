@@ -1,171 +1,178 @@
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Tuple
+from slot import InventorySlot
 import pygame
 from game_time import GameTimeManager
+from item_renderer import draw_item
+from config import INPUTS
+from drag_manager import DragManager
 from asset_loader import get_asset
+from recipe_manager import recipe_manager
+from item_manager import item_manager
+
 
 class CookingInterface:
-    def __init__(self, stove_component, player, screen, recipes, items):
+    def __init__(self, stove_component, player, screen, *, pos=(210, 100), scale=1):
         self.stove = stove_component
         self.player = player
         self.screen = screen
-        self.recipes = recipes
-        self.items = items.values()
+        self.recipes = recipe_manager.get_all_recipes()
+
         self.is_open = True
         self.show_recipes = False
+        self.recipes_per_page = 4
+        self.recipe_page = 0
+        self._pick_source_info: Optional[Tuple[str, Optional[int]]] = None
 
-        # Позиции и размеры
-        self.window_rect = pygame.Rect(300, 100, 600, 400)
-        self.slot_size = 64
+        self.base_x, self.base_y = pos
+        self.scale = scale
+
+        def _x(val): return int(val * self.scale) + self.base_x
+        def _y(val): return int(val * self.scale) + self.base_y
+        def _s(val): return int(val * self.scale)
+
+        self.window_rect = pygame.Rect(_x(0), _y(0), _s(220), _s(200))
+        self.slot_size = _s(40)
         self.slot_positions = [
-            (350, 150), (450, 150), (550, 150)  # Слоты для ингредиентов
+            (_x(10), _y(10)), (_x(55), _y(10)), (_x(100), _y(10)),
+            (_x(10), _y(55)), (_x(55), _y(55)), (_x(100), _y(55))
         ]
-        self.result_slot = (650, 150)  # Слот результата
-        self.fuel_slot = (350, 250)  # Слот для топлива
-        self.arrow_rect = pygame.Rect(600, 150, 40, 40)
-        self.recipe_button_rect = pygame.Rect(310, 110, 100, 30)
+        self.result_slot_pos = (_x(170), _y(32))
+        self.fuel_slot_pos = (_x(55), _y(135))
+        self.progress_bar_rect = pygame.Rect(_x(142), _y(37), _s(25), _s(15))
+        self.recipe_button_rect = pygame.Rect(_x(170), _y(135), _s(40), _s(40))
+        
+        self.recipe_button_image = get_asset('assets/ui/recipe_book.png')
+        self.recipe_button_image = pygame.transform.scale(self.recipe_button_image, (self.recipe_button_rect.width, self.recipe_button_rect.height))
 
-        # Состояние
-        self.ingredient_slots = [None, None, None]  # ID ингредиентов
-        self.result_item = None  # ID результата
-        self.fuel_item = None  # ID топлива (например, "wood")
-        self.current_recipe = None
-        self.font = pygame.font.Font(None, 24)
+        self.recipe_window_rect = pygame.Rect(self.window_rect.left - 195, self.window_rect.y, _s(190), _s(200))
+        self.prev_button_rect = pygame.Rect(self.recipe_window_rect.x + _s(10), self.recipe_window_rect.bottom - _s(35), _s(30), _s(30))
+        self.next_button_rect = pygame.Rect(self.recipe_window_rect.right - _s(40), self.recipe_window_rect.bottom - _s(35), _s(30), _s(30))
 
-    def draw(self):
-        # Фон окна
-        pygame.draw.rect(self.screen, (100, 100, 100), self.window_rect)
-        pygame.draw.rect(self.screen, (0, 0, 0), self.window_rect, 2)
+        self.ingredient_slots = self.stove.ingredient_slots
+        self.result_item = self.stove.result_slot
 
-        # Слоты ингредиентов
-        for i, pos in enumerate(self.slot_positions):
-            pygame.draw.rect(self.screen, (200, 200, 200), (pos[0], pos[1], self.slot_size, self.slot_size))
-            if self.ingredient_slots[i]:
-                for category in self.items:
-                    if 'items' in category and self.ingredient_slots[i] in category['items']:
-                        item_data = category['items'][self.ingredient_slots[i]]
-                        sprite = get_asset(item_data)
-                        if sprite:
-                            sprite = pygame.transform.scale(sprite, (self.slot_size, self.slot_size))
-                            self.screen.blit(sprite, pos)
-                            pygame.draw.rect(self.screen, (0, 0, 0), (pos[0], pos[1], self.slot_size, self.slot_size), 2)
-
-        # Слот результата
-        pygame.draw.rect(self.screen, (200, 200, 200), (self.result_slot[0], self.result_slot[1], self.slot_size, self.slot_size))
-        if self.result_item:
-            sprite = get_asset(self.items[self.result_item]["sprite"])
-            if sprite:
-                sprite = pygame.transform.scale(sprite, (self.slot_size, self.slot_size))
-                self.screen.blit(sprite, self.result_slot)
-        pygame.draw.rect(self.screen, (0, 0, 0), (self.result_slot[0], self.result_slot[1], self.slot_size, self.slot_size), 2)
-
-        # Слот топлива
-        pygame.draw.rect(self.screen, (200, 200, 200), (self.fuel_slot[0], self.fuel_slot[1], self.slot_size, self.slot_size))
-        if self.fuel_item:
-            sprite = get_asset(self.items[self.fuel_item]["sprite"])
-            if sprite:
-                sprite = pygame.transform.scale(sprite, (self.slot_size, self.slot_size))
-                self.screen.blit(sprite, self.fuel_slot)
-        pygame.draw.rect(self.screen, (0, 0, 0), (self.fuel_slot[0], self.fuel_slot[1], self.slot_size, self.slot_size), 2)
-        fuel_text = self.font.render(f"Fuel: {self.stove.fluid_amount}/{self.stove.fluid_max_amount}", True, (0, 0, 0))
-        self.screen.blit(fuel_text, (self.fuel_slot[0], self.fuel_slot[1] + self.slot_size + 5))
-
-        # Стрелка
-        pygame.draw.polygon(self.screen, (0, 200, 0), [
-            (self.arrow_rect.left, self.arrow_rect.centery),
-            (self.arrow_rect.right, self.arrow_rect.top),
-            (self.arrow_rect.right, self.arrow_rect.bottom)
-        ])
-
-        # Кнопка рецептов
-        pygame.draw.rect(self.screen, (0, 0, 200), self.recipe_button_rect)
-        recipe_text = self.font.render("Recipes", True, (255, 255, 255))
-        self.screen.blit(recipe_text, (self.recipe_button_rect.x + 10, self.recipe_button_rect.y + 5))
-
-        # Окно рецептов
-        if self.show_recipes:
-            recipe_window = pygame.Rect(310, 150, 200, 200)
-            pygame.draw.rect(self.screen, (150, 150, 150), recipe_window)
-            for i, recipe in enumerate(self.recipes):
-                text = self.font.render(f"{recipe['result']} ({', '.join(recipe['ingredients'])})", True, (0, 0, 0))
-                self.screen.blit(text, (recipe_window.x + 10, recipe_window.y + 10 + i * 30))
-            pygame.draw.rect(self.screen, (0, 0, 0), recipe_window, 2)
-
-    def handle_event(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            mouse_pos = event.pos
-            # Кнопка рецептов
-            if self.recipe_button_rect.collidepoint(mouse_pos):
-                self.show_recipes = not self.show_recipes
-                return
-            # Стрелка (запустить готовку)
-            if self.arrow_rect.collidepoint(mouse_pos) and not self.stove.is_cooking:
-                self.start_cooking()
-            # Слоты ингредиентов
-            for i, pos in enumerate(self.slot_positions):
-                slot_rect = pygame.Rect(pos[0], pos[1], self.slot_size, self.slot_size)
-                if slot_rect.collidepoint(mouse_pos):
-                    self.handle_slot_click(i)
-            # Слот топлива
-            fuel_rect = pygame.Rect(self.fuel_slot[0], self.fuel_slot[1], self.slot_size, self.slot_size)
-            if fuel_rect.collidepoint(mouse_pos):
-                self.handle_fuel_slot()
-            # Слот результата
-            result_rect = pygame.Rect(self.result_slot[0], self.result_slot[1], self.slot_size, self.slot_size)
-            if result_rect.collidepoint(mouse_pos):
-                self.take_result()
-
-    def handle_slot_click(self, slot_index):
-        # Добавляем ингредиент из инвентаря (заглушка)
-        selected_item = self.get_selected_item()  # Нужно реализовать выбор предмета
-        if selected_item and selected_item in self.items:
-            if self.player.inventory.remove_item(selected_item):
-                self.ingredient_slots[slot_index] = selected_item
-                print(f"Добавлен {selected_item} в слот {slot_index}")
-
-    def handle_fuel_slot(self):
-        # Добавляем топливо
-        selected_item = self.get_selected_item()
-        if selected_item == "wood":
-            if self.player.remove_item("wood"):
-                self.stove.add_fuel(self.items["wood"]["fuel_value"])
-                self.fuel_item = "wood"
-                print("Добавлено топливо: wood")
-
-    def take_result(self):
-        if self.result_item:
-            if self.player.inventory.add_item(self.result_item):
-                self.result_item = None
-                print(f"Получен результат: {self.result_item}")
-
-    def start_cooking(self):
-        ingredients = [slot for slot in self.ingredient_slots if slot]
-        if not ingredients or len(ingredients) < 1:
-            print("Нет ингредиентов для готовки")
-            return
-        if not self.stove.is_lit:
-            print("Печка не зажжена")
-            return
-        if self.stove.fluid_amount < self.stove.cooking_cost:
-            print("Недостаточно топлива")
-            return
-
-        # Проверяем рецепт
-        for recipe in self.recipes:
-            if sorted(ingredients) == sorted(recipe["ingredients"]):
-                self.stove.is_cooking = True
-                self.stove.cooking_timer = recipe["cooking_time"]
-                self.stove.cooking_cost = self.stove.cooking_cost
-                self.current_recipe = recipe
-                self.ingredient_slots = [None] * len(self.ingredient_slots)
-                print(f"Начата готовка: {recipe['result']}")
-                return
-        print("Рецепт не найден")
-
-    def get_selected_item(self):
-        # Заглушка: нужно реализовать выбор предмета из инвентаря
-        return None  # Замените на реальную логику
+        self.font = pygame.font.Font(None, _s(24))
+        self.small_font = pygame.font.Font(None, _s(14))
 
     def update(self, dt, game_time):
-        if self.stove.is_cooking and self.current_recipe and self.stove.cooking_timer <= 0:
-            self.result_item = self.current_recipe["result"]
-            self.current_recipe = None
+        if not self.is_open:
+            return
+        mouse_pos = INPUTS.get('mouse_pos')
+        if mouse_pos is None:
+            return
+
+        if INPUTS.get('left_click'):
+            if self.recipe_button_rect.collidepoint(mouse_pos):
+                self.show_recipes = not self.show_recipes
+                INPUTS['left_click'] = False
+            elif self.show_recipes and self.prev_button_rect.collidepoint(mouse_pos):
+                if self.recipe_page > 0:
+                    self.recipe_page -= 1
+                INPUTS['left_click'] = False
+            elif self.show_recipes and self.next_button_rect.collidepoint(mouse_pos):
+                # Преобразуем в список для проверки длины
+                recipes_list = self.recipes
+                if isinstance(recipes_list, dict):
+                    recipes_list = list(recipes_list.values())
+                max_page = max(0, (len(recipes_list) - 1) // self.recipes_per_page)
+                if self.recipe_page < max_page:
+                    self.recipe_page += 1
+                INPUTS['left_click'] = False
+        
+    def is_hover(self, mouse_pos):
+        return self.window_rect.collidepoint(mouse_pos)
+
+    def _slot_under_cursor(self, mouse_pos):
+        for i, pos in enumerate(self.slot_positions):
+            if pygame.Rect(pos[0], pos[1], self.slot_size, self.slot_size).collidepoint(mouse_pos):
+                return 'ingredient', i
+        if pygame.Rect(self.fuel_slot_pos[0], self.fuel_slot_pos[1], self.slot_size, self.slot_size).collidepoint(mouse_pos):
+            return 'fuel', None
+        if pygame.Rect(self.result_slot_pos[0], self.result_slot_pos[1], self.slot_size, self.slot_size).collidepoint(mouse_pos):
+            return 'result', None
+        return None
+
+    def pick_item(self, mouse_pos, right_click):
+        info = self._slot_under_cursor(mouse_pos)
+        if not info: return None
+        slot_type, idx = info
+        
+        slot_to_pick = None
+        if slot_type == 'ingredient': slot_to_pick = self.ingredient_slots[idx]
+        elif slot_type == 'result': slot_to_pick = self.result_item
+        
+        if slot_to_pick and not slot_to_pick.is_empty() and not slot_to_pick.is_ghost:
+            slot_to_pick.is_ghost = True
+            self._pick_source_info = (slot_type, idx)
+            return InventorySlot(slot_to_pick.item_id, 1 if right_click else slot_to_pick.amount)
+        return None
+
+    def drop_item(self, drag_slot, mouse_pos, right_click):
+        info = self._slot_under_cursor(mouse_pos)
+        if not info: return False
+        slot_type, idx = info
+
+        # Если бросаем предмет обратно в тот же слот, считаем это успехом, но ничего не делаем.
+        # finalize_pick корректно обработает эту ситуацию.
+        if self._pick_source_info == (slot_type, idx):
+            return True
+
+        if slot_type == 'ingredient':
+            target_slot = self.ingredient_slots[idx]
+            amount_to_move = 1 if right_click else drag_slot.amount
+            if target_slot.is_empty():
+                target_slot.item_id = drag_slot.item_id
+                target_slot.add(amount_to_move)
+                drag_slot.remove(amount_to_move)
+                self.stove._sync_state()
+                return True
+            elif target_slot.item_id == drag_slot.item_id and target_slot.can_add(amount_to_move):
+                target_slot.add(amount_to_move)
+                drag_slot.remove(amount_to_move)
+                self.stove._sync_state()
+                return True
+        
+        elif slot_type == 'fuel':
+            item_info = item_manager.get_item_data(drag_slot.item_id)
+            is_fuel = drag_slot.item_id == 'wood' or (item_info and item_info.get('type') == 'fuel')
+            if is_fuel:
+                fuel_amount = item_info.get('fuel_amount', 10) if item_info else 10
+                if self.stove.add_fuel(fuel_amount, fuel_type='wood'):
+                    self.stove.fuel_slot_item_id = drag_slot.item_id
+                    drag_slot.remove(1)
+                    self.stove._sync_state()
+                    return True
+        
+        return False
+
+    def finalize_pick(self, final_drag_slot: Optional[InventorySlot], accepted: bool, right_click: bool):
+        source_info = self._pick_source_info
+        if not source_info:
+            return
+        
+        slot_type, idx = source_info
+        source_slot = None
+        if slot_type == 'ingredient':
+            source_slot = self.ingredient_slots[idx]
+        elif slot_type == 'result':
+            source_slot = self.result_item
+
+        if source_slot:
+            source_slot.is_ghost = False
+            if not accepted:
+                # Если перетаскивание не было принято (напр. бросили в пустое место), ничего не меняем.
+                pass
+            elif right_click:
+                # Правый клик: уменьшаем источник, только если предмет был успешно помещен (слот курсора опустел).
+                if final_drag_slot and final_drag_slot.amount == 0:
+                    source_slot.remove(1)
+            else:
+                # Левый клик: обновляем источник тем, что осталось в слоте курсора.
+                if final_drag_slot and final_drag_slot.amount > 0:
+                    source_slot.item_id = final_drag_slot.item_id
+                    source_slot.amount = final_drag_slot.amount
+                else:
+                    source_slot.clear()
+
+        self._pick_source_info = None
+        self.stove._sync_state()

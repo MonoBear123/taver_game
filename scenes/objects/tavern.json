@@ -2,11 +2,51 @@
     "current_level": 1,
     "saved_state": {
         "stove_1": {
-            "is_lit": false,
             "is_cooking": false,
-            "fluid_amount": 0,
-            "cooking_timer": 0,
-            "fluid_consumption_timer": 0
+            "fluid_amount": 50,
+            "cooking_timer": -0.027999999999994002,
+            "cooking_time": 5,
+            "fluid_consumption_timer": 16.84399999995976,
+            "ingredients": [
+                {
+                    "item_id": null,
+                    "amount": 0,
+                    "max_stack": 24
+                },
+                {
+                    "item_id": null,
+                    "amount": 0,
+                    "max_stack": 24
+                },
+                {
+                    "item_id": null,
+                    "amount": 0,
+                    "max_stack": 24
+                },
+                {
+                    "item_id": null,
+                    "amount": 0,
+                    "max_stack": 24
+                },
+                {
+                    "item_id": null,
+                    "amount": 0,
+                    "max_stack": 24
+                },
+                {
+                    "item_id": null,
+                    "amount": 0,
+                    "max_stack": 24
+                }
+            ],
+            "result": {
+                "item_id": null,
+                "amount": 0,
+                "max_stack": 24
+            },
+            "fuel_item": "wood",
+            "current_recipe": null,
+            "is_lit": false
         },
         "storage_1": {
             "is_open": false,
@@ -17,7 +57,7 @@
         },
         "toilet_1": {
             "is_occupied": false,
-            "occupation_timer": 0
+            "occupation_timer": -0.025999999999993556
         }
     },
     "levels": [
@@ -25,78 +65,116 @@
             "level": 1,
             "objects": [
                 {
-                    "type": "stove",
-                    "id": "stove_1",
-                    "x": 400,
-                    "y": 500,
-                    "animations": {
-                        "idle": [
-                            "stove_1"
-                        ],
-                        "lit": [
-                            "stove_empty_1",
-                            "stove_empty_2",
-                            "stove_empty_3"
-                        ],
-                        "cooking": [
-                            "stove_food_1",
-                            "stove_food_2",
-                            "stove_food_3"
+                    "type": "chair",
+                    "id": "chair_1",
+                    "x":70,
+                    "y":512,
+                    "table_id": "table_1",
+                    "animations":{
+                        "idle":[
+                            "chair_1_right"
                         ]
                     }
+
                 },
                 {
-                    "type": "storage",
-                    "id": "storage_1",
-                    "x": 300,
-                    "y": 150,
-                    "animations": {
-                        "idle": [
-                            "big_box"
+                    "type": "chair",
+                    "id": "chair_4",
+                    "x":96,
+                    "y":490,
+                    "table_id": "table_1",
+                    "animations":{
+                        "idle":[
+                            "chair_1_front"
                         ]
                     }
+
                 },
                 {
-                    "type": "toilet",
-                    "id": "toilet_1",
-                    "x": 450,
-                    "y": 500,
-                    "animations": {
-                        "idle": [
-                            "toilet"
-                        ],
-                        "occupied": [
-                            "toilet"
+                    "type": "chair",
+                    "id": "chair_3",
+                    "x":96,
+                    "y":590,
+                    "table_id": "table_1",
+                    "animations":{
+                        "idle":[
+                            "chair_1_back"
                         ]
                     }
-                }
+
+                },
+                {
+                    "type": "chair",
+                    "id": "chair_2",
+                    "x":122,
+                    "y":512,
+                    "table_id": "table_1",
+                    "animations":{
+                        "idle":[
+                            "chair_1_left"
+                        ]
+                    }
+
+                },
+                {
+                    "type": "table",
+                    "id": "table_1",
+                    "x": 96,
+                    "y": 524,
+                    "animations": {
+                        "idle": [
+                            "table_1"
+                        ]
+                       
+
+                    }
+                },
+                { "type": "table", "id": "table_4", "x": 100, "y": 684, "animations": { "idle": ["table_1"] } },
+                { "type": "chair", "id": "chair_11", "x": 74, "y": 672, "table_id": "table_4", "animations": { "idle": ["chair_1_right"] } },
+                { "type": "chair", "id": "chair_12", "x": 126, "y": 672, "table_id": "table_4", "animations": { "idle": ["chair_1_left"] } },
+                { "type": "chair", "id": "chair_14", "x": 100, "y": 750, "table_id": "table_4", "animations": { "idle": ["chair_1_back"] } },
+                { "type": "table", "id": "table_5", "x": 222, "y": 684, "animations": { "idle": ["table_1"] } },
+                { "type": "chair", "id": "chair_15", "x": 196, "y": 672, "table_id": "table_5", "animations": { "idle": ["chair_1_right"] } },
+                { "type": "chair", "id": "chair_16", "x": 248, "y": 672, "table_id": "table_5", "animations": { "idle": ["chair_1_left"] } },
+                { "type": "chair", "id": "chair_17", "x": 222, "y": 650, "table_id": "table_5", "animations": { "idle": ["chair_1_front"] } },
+                { "type": "chair", "id": "chair_18", "x": 222, "y": 750, "table_id": "table_5", "animations": { "idle": ["chair_1_back"] } },
+                { "type": "table", "id": "table_6", "x": 228, "y": 524, "animations": { "idle": ["table_1"] } },
+                { "type": "chair", "id": "chair_19", "x": 202, "y": 512, "table_id": "table_6", "animations": { "idle": ["chair_1_right"] } },
+                { "type": "chair", "id": "chair_20", "x": 254, "y": 512, "table_id": "table_6", "animations": { "idle": ["chair_1_left"] } }
+               
             ]
         },
         {
             "level": 2,
             "objects": [
-                {
-                    "type": "table",
-                    "id": "table_1",
-                    "x": 200,
-                    "y": 300,
-                    "animations": {
-                        "idle": [
-                            "table_1"
-                        ]
-                    }
-                },
-                {
-                    "type": "storage",
-                    "id": "storage_2",
-                    "x": 400,
-                    "y": 250,
-                    "animations": {
-                        "idle": [
-                            "big_box"
-                        ]
-                    }
-                }
+                { "type": "chair", "id": "l2_chair_1", "x": 470, "y": 512, "table_id": "l2_table_1", "animations": { "idle": ["chair_2_right"]}},
+                { "type": "chair", "id": "l2_chair_4", "x": 496, "y": 490, "table_id": "l2_table_1", "animations": { "idle": ["chair_2_front"]}},
+                { "type": "chair", "id": "l2_chair_3", "x": 496, "y": 590, "table_id": "l2_table_1", "animations": { "idle": ["chair_2_back"]}},
+                { "type": "chair", "id": "l2_chair_2", "x": 522, "y": 512, "table_id": "l2_table_1", "animations": { "idle": ["chair_2_left"]}},
+                { "type": "table", "id": "l2_table_1", "x": 496, "y": 524, "animations": { "idle": ["table_1"]}},
+                { "type": "table", "id": "l2_table_4", "x": 500, "y": 684, "animations": { "idle": ["table_1"]}},
+                { "type": "chair", "id": "l2_chair_11", "x": 474, "y": 672, "table_id": "l2_table_4", "animations": { "idle": ["chair_2_right"]}},
+                { "type": "chair", "id": "l2_chair_12", "x": 526, "y": 672, "table_id": "l2_table_4", "animations": { "idle": ["chair_2_left"]}},
+                { "type": "chair", "id": "l2_chair_14", "x": 500, "y": 750, "table_id": "l2_table_4", "animations": { "idle": ["chair_2_back"]}},
+                { "type": "table", "id": "l2_table_5", "x": 622, "y": 684, "animations": { "idle": ["table_1"]}},
+                { "type": "chair", "id": "l2_chair_15", "x": 596, "y": 672, "table_id": "l2_table_5", "animations": { "idle": ["chair_2_right"]}},
+                { "type": "chair", "id": "l2_chair_16", "x": 648, "y": 672, "table_id": "l2_table_5", "animations": { "idle": ["chair_2_left"]}},
+                { "type": "chair", "id": "l2_chair_17", "x": 622, "y": 650, "table_id": "l2_table_5", "animations": { "idle": ["chair_2_front"]}},
+                { "type": "chair", "id": "l2_chair_18", "x": 622, "y": 750, "table_id": "l2_table_5", "animations": { "idle": ["chair_2_back"]}},
+                { "type": "table", "id": "l2_table_6", "x": 628, "y": 524, "animations": { "idle": ["table_1"]}},
+                { "type": "chair", "id": "l2_chair_19", "x": 602, "y": 512, "table_id": "l2_table_6", "animations": { "idle": ["chair_2_right"]}},
+                { "type": "chair", "id": "l2_chair_20", "x": 654, "y": 512, "table_id": "l2_table_6", "animations": { "idle": ["chair_2_left"]}}
+            ]
+        },
+        {
+            "level": 3,
+            "objects": [
+                { "type": "table", "id": "l3_table_5", "x": 822, "y": 684, "animations": { "idle": ["table_1"]}},
+                { "type": "chair", "id": "l3_chair_15", "x": 796, "y": 672, "table_id": "l3_table_5", "animations": { "idle": ["chair_2_right"]}},
+                { "type": "chair", "id": "l3_chair_16", "x": 848, "y": 672, "table_id": "l3_table_5", "animations": { "idle": ["chair_2_left"]}},
+                { "type": "table", "id": "l3_table_6", "x": 828, "y": 524, "animations": { "idle": ["table_1"]}},
+                { "type": "chair", "id": "l3_chair_19", "x": 802, "y": 512, "table_id": "l3_table_6", "animations": { "idle": ["chair_2_right"]}},
+                { "type": "chair", "id": "l3_chair_20", "x": 854, "y": 512, "table_id": "l3_table_6", "animations": { "idle": ["chair_2_left"]}}
             ]
         }
     ]

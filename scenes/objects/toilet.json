@@ -14,7 +14,7 @@
                     "type": "toilet",
                     "id": "toilet_1",
                     "x": 90,
-                    "y": 150,
+                    "y": 100,
                     "animations": {
                         "idle": [
                             "toilet"

@@ -4,7 +4,9 @@ from config import *
 
 class Camera(pygame.sprite.Group):
     def __init__(self,scene):
-
+        super().__init__()
+        self.scene = scene
+        self.game = scene.game
         self.offset = vec()
         self.visible_window = pygame.Rect(0,0,WIN_WIDTH,WIN_HEIGHT)
         self.scene_size = self.get_scene_size(scene)
@@ -13,8 +15,8 @@ class Camera(pygame.sprite.Group):
         map_height = scene.tmx_data.height * scene.tmx_data.tileheight
         return map_height, map_width
     def update(self,dt,target):
-        self.offset.x = target.rect.centerx - WIN_WIDTH/2
-        self.offset.y = target.rect.centery - WIN_HEIGHT/2
+        self.offset.x = target.rect.centerx - WIN_WIDTH / 2
+        self.offset.y = target.rect.centery - WIN_HEIGHT / 2
 
         self.offset.y = max(0,min(self.offset.y ,self.scene_size[0] - WIN_HEIGHT))
         self.offset.x = max(0,min(self.offset.x,self.scene_size[1] - WIN_WIDTH)) 
@@ -40,15 +42,37 @@ class Camera(pygame.sprite.Group):
 
 
         
-    def draw(self,screen,group):
+    def draw(self,screen):
         screen.fill(COLOURS['dark_gray'])
-        layers = ['objects','characters', 'foreground','interactive']  
-        for layer in LAYERS:
-            sprites_in_layer = [sprite for sprite in group if sprite.z == layer]
-            for sprite in sorted(sprites_in_layer, key=lambda sprite: sprite.rect.centery):
-                if self.visible_window.colliderect(sprite.rect):
+        
+        group = self.scene.drawn_sprites
+        dynamic_layers = ['objects', 'characters', 'interactive', 'decorations','windows']
+        
+        layer_order_map = {layer: i for i, layer in enumerate(LAYERS)}
+        
+        dynamic_layer_index = min(layer_order_map[layer] for layer in dynamic_layers if layer in layer_order_map)
+
+        def sort_key(sprite):
+            y_coord = sprite.rect.centery
+            
+            if sprite.z in dynamic_layers:
+                return (dynamic_layer_index, y_coord)
+            
+            layer_index = layer_order_map.get(sprite.z, -1)
+            return (layer_index, y_coord)
+
+        for sprite in sorted(list(group), key=sort_key):
+            if self.visible_window.colliderect(sprite.rect):
+                if callable(sprite.draw):
+                    sprite.draw(screen, self.offset)
+                else:
                     offset_pos = sprite.rect.topleft - self.offset
                     screen.blit(sprite.image, offset_pos)
-                    # if layer in layers:
-                        # self.hitbox_debugger(screen, sprite)
+
+                if self.game.debug and sprite.z in dynamic_layers:
+                    if hasattr(sprite, 'hitbox'):
+                         self.hitbox_debugger(screen,sprite)
                         
+                if self.game.debug and  sprite.debug_target_pos:
+                    target_pos = sprite.debug_target_pos - self.offset
+                    pygame.draw.circle(screen, (255, 0, 0), target_pos, 10)

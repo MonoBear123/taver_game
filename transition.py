@@ -7,7 +7,7 @@ class Transition:
         self.fade_surf = pygame.Surface((WIN_WIDTH,WIN_HEIGHT))
         self.scene = scene
         self.exiting = False
-        self.fade_speed = 200
+        self.fade_speed = 450
         self.alpha = 255 
     def update(self,dt):
         if self.exiting:

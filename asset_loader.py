@@ -1,10 +1,15 @@
 import pygame
+import os
 
 _asset_cache = {}
 
-def get_asset(name: str) -> pygame.Surface:
+def get_asset(path: str) -> pygame.Surface:
+    if path not in _asset_cache:
+        if not os.path.sep in path and not path.endswith('.png'):
+            full_path = os.path.join('assets', 'objects', f'{path}.png')
+        else:
+            full_path = path
 
-    if name not in _asset_cache:
-        path = f"assets/objects/{name}.png"
-        _asset_cache[name] = pygame.image.load(path).convert_alpha()
-    return _asset_cache[name]
+        _asset_cache[path] = pygame.image.load(full_path).convert_alpha()
+        
+    return _asset_cache[path]

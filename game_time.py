@@ -27,5 +27,14 @@ class GameTimeManager:
         PLAYER_STATE['time_minutes'] = self.minutes
         PLAYER_STATE['day'] = self.day
 
+    def advance_to_next_day(self):
+        self.day = (self.day + 1) % 7
+        self.hours = 8
+        self.minutes = 0
+        self.save_state()
+        print(f"ДЕБАГ: Время переведено на следующий день. Сейчас {self.get_time_string()}.")
+
     def get_time_string(self):
         return f'{self.hours}:{int(self.minutes):02d}', self.days_of_week[self.day]
+
+game_time = GameTimeManager()
