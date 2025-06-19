@@ -1,8 +1,6 @@
 import json
 from game_time import game_time
-from asset_loader import get_asset
 from typing import Dict, Any, Optional, List
-from collections import namedtuple
 from entity_component_system import Entity, StateComponent, ChairComponent
 from character import NPC, Guest, Leaving
 import random
@@ -32,7 +30,6 @@ class Room:
 
     def save_state(self):
         state = {}
-        # Находим объекты, которые принадлежат этой комнате, через ID
         room_object_ids = {obj_data['id'] for obj_data in self.all_objects_data}
         
         for obj in self.scene.interactive_sprites:
@@ -52,18 +49,16 @@ class Room:
         self.current_level += 1
         self.data["current_level"] = self.current_level
         
-        # Перезагружаем данные после изменения JSON
         self.data = self._load_json(self.json_path)
         self.all_objects_data = []
         for level_data in self.data.get("levels", []):
             if level_data["level"] <= self.current_level:
                 self.all_objects_data.extend(level_data.get("objects", []))
 
-        # Сообщаем сцене, что нужно обновить объекты
         self.scene.recreate_room_objects()
         
     def update(self, dt: float):
-        pass # Логика обновления объектов теперь в основной сцене
+        pass 
 
     def handle_event(self, event):
         pass
@@ -95,9 +90,7 @@ class TavernRoom(Room):
     def __init__(self, json_path, scene):
         super().__init__(json_path, scene)
         self.customers: List[Guest] = []
-        self.Order = namedtuple('Order', ['customer', 'item_id', 'recipe_id'])
-        self.orders: List[self.Order] = []
-        self.chairs = [obj for obj in self.scene.interactive_sprites if obj.has_component(ChairComponent)]
+        self.orders: List[tuple] = []
         
         self.spawn_points = []
         for obj in self.scene.tmx_data.get_layer_by_name("enteries"):
@@ -107,18 +100,28 @@ class TavernRoom(Room):
         self.spawn_timer = NPC_SPAWN_INTERVAL
         self.grid_scale = 2
         self.sub_tile_size = TILE_SIZE // self.grid_scale
-        self.grid = self.create_collision_grid()
+        self.chairs = None
+        self.grid = None
 
-    def create_collision_grid(self):
+    def _initialize(self):
+        if self.chairs is not None:
+            return
+        self.chairs = [
+            obj for obj in self.scene.interactive_sprites 
+            if hasattr(obj, 'has_component') and obj.has_component(ChairComponent)
+        ]
+        
+        self.grid = self.create_grid()
+
+    def create_grid(self):
         grid_width = self.scene.tmx_data.width * self.grid_scale
         grid_height = self.scene.tmx_data.height * self.grid_scale
         grid = [[0 for _ in range(grid_width)] for _ in range(grid_height)]
-
-        all_obstacles = list(self.scene.block_sprites) + self.chairs
-
-        for sprite in all_obstacles:
+        
+        blocks = [sprite for sprite in self.scene.block_sprites if hasattr(sprite, 'has_component')]
+        
+        for sprite in blocks:
             box = sprite.hitbox
-            
             start_x = box.left // self.sub_tile_size
             end_x = box.right // self.sub_tile_size
             start_y = box.top // self.sub_tile_size
@@ -128,29 +131,42 @@ class TavernRoom(Room):
                 for x in range(start_x, end_x):
                     if 0 <= y < grid_height and 0 <= x < grid_width:
                         grid[y][x] = 1
-        
-        
+        print(self.chairs)
+        for sprite in self.chairs:
+            box = sprite.hitbox
+            start_x = box.left // self.sub_tile_size
+            end_x = box.right // self.sub_tile_size
+            start_y = box.top // self.sub_tile_size
+            end_y = box.bottom // self.sub_tile_size
+
+            for y in range(start_y, end_y):
+                for x in range(start_x, end_x):
+                    if 0 <= y < grid_height and 0 <= x < grid_width:
+                        grid[y][x] = 1
+
         return grid
 
     def add_order(self, customer: Guest, item_id: str, recipe_id: str):
-        new_order = self.Order(customer=customer, item_id=item_id, recipe_id=recipe_id)
+        new_order = (customer, item_id, recipe_id)
         self.orders.append(new_order)
         customer.order = new_order 
 
     def remove_order(self, customer: Guest):
-        order_to_remove = next((order for order in self.orders if order.customer == customer), None)
+        order_to_remove = next((order for order in self.orders if order[0] == customer), None)
         if order_to_remove:
             self.orders.remove(order_to_remove)
             customer.order = None
 
-    def get_random_free_chair(self) -> Optional[Entity]:
-        free_chairs = [
+    def get_free_chair(self):
+        self._initialize()
+
+        self.free_chairs = free_chairs = [
             chair for chair in self.chairs 
             if chair.get_component(ChairComponent) and not chair.get_component(ChairComponent).is_occupied
         ]
+        print(free_chairs)
         if free_chairs:
-            chosen_chair = random.choice(free_chairs)
-            return chosen_chair
+            return random.choice(free_chairs)
         return None
 
     def spawn_npc(self):
@@ -219,7 +235,7 @@ class ToiletRoom(Room):
     
     def update(self, dt):
         super().update(dt)
-        pass
+        
     
     def handle_event(self, event):
         pass
@@ -233,9 +249,6 @@ class RestRoom(Room):
     
     def update(self, dt):
         super().update(dt)
-        if 22 <= game_time.hours or game_time.hours < 6:
-            if self.scene.player in self.scene.interactive_sprites:
-                self.scene.player.rest(dt * 10)  
     
     def handle_event(self, event):
         pass

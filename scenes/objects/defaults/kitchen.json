@@ -1,0 +1,168 @@
+{
+    "current_level": 2,
+    "saved_state": {
+        "stove_1": {
+            "is_cooking": false,
+            "fluid_amount": 62,
+            "cooking_timer": -0.01599999999999266,
+            "cooking_time": 5,
+            "fluid_consumption_timer": 12.823999999983569,
+            "ingredients": [
+                {
+                    "item_id": null,
+                    "amount": 0,
+                    "max_stack": 24
+                },
+                {
+                    "item_id": null,
+                    "amount": 0,
+                    "max_stack": 24
+                },
+                {
+                    "item_id": null,
+                    "amount": 0,
+                    "max_stack": 24
+                },
+                {
+                    "item_id": null,
+                    "amount": 0,
+                    "max_stack": 24
+                },
+                {
+                    "item_id": null,
+                    "amount": 0,
+                    "max_stack": 24
+                },
+                {
+                    "item_id": null,
+                    "amount": 0,
+                    "max_stack": 24
+                }
+            ],
+            "result": {
+                "item_id": "hot_pepper",
+                "amount": 1,
+                "max_stack": 24
+            },
+            "fuel_item": null,
+            "current_recipe": null,
+            "is_lit": false
+        },
+        "storage_1": {
+            "is_open": false,
+            "inventory": {
+                "slots": [
+                    {"item_id": "flour", "amount": 10},
+                    {"item_id": "tomato", "amount": 8},
+                    {"item_id": "carrot", "amount": 12},
+                    {"item_id": "salt", "amount": 5},
+                    {"item_id": "sugar", "amount": 5},
+                    {"item_id": "sweet_pepper", "amount": 6},
+                    {"item_id": "hot_pepper", "amount": 4}
+                ]
+            }
+        },
+        "storage_2": {
+            "inventory": {
+                "slots": [
+                    {"item_id": "chiken_leg", "amount": 6},
+                    {"item_id": "chiken_wing", "amount": 6},
+                    {"item_id": "egg", "amount": 12},
+                    {"item_id": "fresh_steak", "amount": 4}
+                ]
+            }
+        },
+        "wood_1": {
+            "is_used": false,
+            "cooldown_timer": -0.02999999999800404,
+            "fuel_amount": 20
+        }
+    },
+    "levels": [
+        {
+            "level": 1,
+            "objects": [
+                {
+                    "type": "stove",
+                    "id": "stove_1",
+                    "x": 96,
+                    "y": 432,
+                    "animations": {
+                        "idle": [
+                            "stove_1"
+                        ],
+                        "lit": [
+                            "stove_empty_1",
+                            "stove_empty_2",
+                            "stove_empty_3"
+                        ],
+                        "cooking": [
+                            "stove_food_1",
+                            "stove_food_2",
+                            "stove_food_3"
+                        ]
+                    }
+                },
+                {
+                    "type": "storage",
+                    "id": "storage_1",
+                    "x": 432,
+                    "y": 400,
+                    "animations": {
+                        "idle": [
+                            "big_box"
+                        ]
+                    }
+                },
+                {
+                    "type": "wood",
+                    "id": "wood_1",
+                    "x": 432,
+                    "y": 512,
+                    "animations": {
+                        "idle": [
+                            "wood"
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "level": 2,
+            "objects": [
+                {
+                    "type": "stove",
+                    "id": "stove_2",
+                    "x": 96,
+                    "y": 300,
+                    "animations": {
+                        "idle": [
+                            "stove_1"
+                        ],
+                        "lit": [
+                            "stove_empty_1",
+                            "stove_empty_2",
+                            "stove_empty_3"
+                        ],
+                        "cooking": [
+                            "stove_food_1",
+                            "stove_food_2",
+                            "stove_food_3"
+                        ]
+                    }
+                },
+                {
+                    "type": "storage",
+                    "id": "storage_2",
+                    "x": 380,
+                    "y": 280,
+                    "animations": {
+                        "idle": [
+                            "barrel_three"
+                        ]
+                    }
+                }
+            ]
+        }
+    ]
+}

@@ -141,9 +141,6 @@ class Entity(pygame.sprite.Sprite):
 
     def add_component(self, component: Component) -> None:
         component_type = type(component)
-        if component_type in self.components:
-            raise ValueError(f"Component {component_type.__name__} already exists!")
-        
         self.components[component_type] = component
         component.on_add(self)
     
@@ -570,9 +567,8 @@ class ChairComponent(Component):
             if getattr(player, 'is_sitting', False):
                 player.stand_up()
 
-    def save_state(self) -> Dict[str, Any]:
-        return {"is_occupied": self.is_occupied, "table_id": self.table_id}
-
+    def save_state(self):
+        pass
     def load_state(self, state: Dict[str, Any]) -> None:
         self.is_occupied = state.get("is_occupied", self.is_occupied)
 

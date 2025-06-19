@@ -46,56 +46,6 @@ class SplashScreen(State):
         self.game.render_text("Tavern",COLOURS['white'],self.game.font,(WIN_WIDTH/2,WIN_HEIGHT/2))
     
 
-class MainMenu(State):
-    def __init__(self, game):
-        super().__init__(game)
-        self.options = ["Продолжить", "Новая игра", "Выход"]
-        self.selected_option = 0
-        self.up_pressed = False
-        self.down_pressed = False
-        self.background_image = None
-        try:
-            self.background_image = pygame.image.load('assets/ui/main_menu_background.png').convert()
-            self.background_image = pygame.transform.scale(self.background_image, (WIN_WIDTH, WIN_HEIGHT))
-        except pygame.error:
-            pass
-
-    def update(self, dt):
-        if INPUTS['up'] and not self.up_pressed:
-            self.selected_option = (self.selected_option - 1) % len(self.options)
-            self.up_pressed = True
-        if not INPUTS['up']:
-            self.up_pressed = False
-
-        if INPUTS['down'] and not self.down_pressed:
-            self.selected_option = (self.selected_option + 1) % len(self.options)
-            self.down_pressed = True
-        if not INPUTS['down']:
-            self.down_pressed = False
-            
-        if INPUTS.get('interact') or INPUTS.get('space'):
-            if self.selected_option == 0:
-                pass
-            elif self.selected_option == 1:
-                Scene(self.game, 'tavern', 'enter').enter_state()
-            elif self.selected_option == 2:
-                self.game.running = False
-
-    def draw(self, screen):
-        if self.background_image:
-            screen.blit(self.background_image, (0, 0))
-        else:
-            screen.fill(COLOURS['dark_purple'])
-
-        for i, option in enumerate(self.options):
-            color = COLOURS['green'] if i == self.selected_option else COLOURS['white']
-            self.game.render_text(
-                option,
-                color,
-                self.game.font,
-                (WIN_WIDTH / 2, WIN_HEIGHT / 2 - 50 + i * 50)
-            )
-
 class Scene(State):
     def __init__(self, game, current_scene, entry_point):
         State.__init__(self, game)
@@ -120,7 +70,6 @@ class Scene(State):
         self.factory.create_from_room_data(self.room)
         
         self.adopt_room_npcs()
-        print(self.room)
 
     def get_sprite_groups(self):
         return [self.update_sprites, self.drawn_sprites, self.block_sprites]

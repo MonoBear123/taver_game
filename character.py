@@ -20,14 +20,14 @@ class BaseCharacter(pygame.sprite.Sprite):
         self.animations = {}
         self.import_images(f'assets/characters/{self.name}/')
         
-        self.image = self.animations.get('walk_left', [pygame.Surface((TILE_SIZE, TILE_SIZE))])[self.frame_index].convert_alpha()
+        self.image = self.animations['walk_left'][self.frame_index].convert_alpha()
         self.rect = self.image.get_rect(topleft=pos)
-        self.hitbox = self.rect.copy().inflate(-self.rect.width * 0.5, -self.rect.height * 0.5)
-        self.speed = PLAYER_SPEED
-        self.force = PLAYER_FORCE
+        self.hitbox = self.rect.copy().inflate(-self.rect.width / 1.4, -self.rect.height / 1.4)
+        self.speed = SPEED
+        self.force = FORCE
         self.acc = vec()
         self.vel = vec()
-        self.fric = PLAYER_FRICTION
+        self.fric = FRICTION
         self.move = {'left': False, 'right': False, 'up': False, 'down': False}
         self.sit_down_trigger = False
         self.chair = None
@@ -35,8 +35,7 @@ class BaseCharacter(pygame.sprite.Sprite):
         self.state = None
         self.debug_target_pos = None
 
-    def draw(self, screen, offset):
-        screen.blit(self.image, self.rect.topleft - offset)
+    def draw_debug(self, screen, offset):
         if self.game.debug:
             if hasattr(self, 'hitbox'):
                 offset_hitbox = self.hitbox.copy()
@@ -168,9 +167,14 @@ class Guest(NPC):
         super().__init__(game, scene, groups, pos, z, name)
         self.order = None
 
-    def draw(self, screen, offset):
-        super().draw(screen, offset)
+    def kill(self):
+        if self.chair:
+            chair_comp = self.chair.get_component(ChairComponent)
+            if chair_comp and chair_comp.occupant == self:
+                chair_comp.vacate()
+        super().kill()
 
+    def draw_bubble(self, screen, offset):
         if isinstance(self.state, WaitingForFood) and self.order:
             bubble_rect = pygame.Rect(0, 0, 36, 36)
             bubble_rect.centerx = self.rect.centerx
@@ -182,13 +186,13 @@ class Guest(NPC):
             pygame.draw.ellipse(screen, COLOURS['white'], offset_bubble_rect)
             pygame.draw.ellipse(screen, COLOURS['black'], offset_bubble_rect, 2)
 
-            item_sprite = get_item_sprite(self.order.item_id, size=32)
+            item_sprite = get_item_sprite(self.order[1])
             if item_sprite:
                 sprite_rect = item_sprite.get_rect(center=offset_bubble_rect.center)
                 screen.blit(item_sprite, sprite_rect)
 
     def receive_food(self, item_id):
-        if isinstance(self.state, WaitingForFood) and self.order and self.order.item_id == item_id:
+        if isinstance(self.state, WaitingForFood) and self.order and self.order[1] == item_id:
             if hasattr(self.scene, 'room') and hasattr(self.scene.room, 'remove_order'):
                 self.scene.room.remove_order(self)
 
@@ -198,7 +202,7 @@ class Guest(NPC):
 
     def interact(self, player):
         if isinstance(self.state, WaitingForFood) and self.order:
-            ordered_item_id = self.order.item_id
+            ordered_item_id = self.order[1]
             if player.inventory.has_item(ordered_item_id):
                 if self.receive_food(ordered_item_id):
                     player.inventory.remove_item(ordered_item_id, 1)
@@ -317,11 +321,11 @@ class Eating:
         character.frame_index = 0
         
         recipe = None
-        if character.order and character.order.recipe_id:
-            recipe = recipe_manager.get_recipe(character.order.recipe_id)
+        if character.order and character.order[2]:
+            recipe = recipe_manager.get_recipe(character.order[2])
 
         cooking_time = recipe.get('cooking_time', 5) if recipe else 5
-        self.eating_timer = cooking_time * NPC_EATING_TIME_MULTIPLIER
+        self.eating_timer = cooking_time * NPC_EATING_TIME
         
     def update(self, character, dt):
         self.eating_timer -= dt
@@ -340,6 +344,11 @@ class Eating:
 class Leaving:
     def __init__(self, character):
         character.target = None
+        if character.chair:
+            chair_comp = character.chair.get_component(ChairComponent)
+            if chair_comp:
+                chair_comp.vacate()
+            character.chair = None
         
     def update(self, character, dt):
         character.animate(f'idle_{character.get_direction()}', ANIMATION_SPEED_IDLE * dt)
@@ -348,18 +357,13 @@ class Leaving:
 class FindingChair:
     def __init__(self, character):
         character.frame_index = 0
-        self.timer = NPC_FIND_CHAIR_TIMEOUT
 
     def update(self, character, dt):
-        free_chair = character.scene.room.get_random_free_chair()
+        free_chair = character.scene.room.get_free_chair()
         if free_chair:
             character.target = free_chair
             return MovingToTarget(character)
 
-        self.timer -= dt
-        if self.timer <= 0:
-            return Idle(character)
-        return None
 class MovingToTarget:
     def __init__(self, character):
         character.frame_index = 0
@@ -367,39 +371,59 @@ class MovingToTarget:
         character.debug_target_pos = None
 
         if not hasattr(character, 'target') or not character.target:
-            character.set_state(Idle(character)) 
+            character.set_state(Idle(character))
             return
 
-        
         grid = character.scene.room.grid
         sub_tile_size = character.scene.room.sub_tile_size
-        
         start_pos_grid = (character.rect.centerx // sub_tile_size, character.rect.centery // sub_tile_size)
-        
-        target_center_pos = character.target.rect.center
-        end_pos_grid = (target_center_pos[0] // sub_tile_size, target_center_pos[1] // sub_tile_size)
-        
-        character.debug_target_pos = pygame.math.Vector2(
-            end_pos_grid[0] * sub_tile_size + sub_tile_size // 2,
-            end_pos_grid[1] * sub_tile_size + sub_tile_size // 2
-        )
+        target_center_grid = (character.target.rect.centerx // sub_tile_size, character.target.rect.centery // sub_tile_size)
 
-        original_grid_value = grid[end_pos_grid[1]][end_pos_grid[0]]
-        grid[end_pos_grid[1]][end_pos_grid[0]] = 0
-        
-        path_grid = astar(grid, start_pos_grid, end_pos_grid)
+        best_path = None
+        best_target_pos = None
 
-        grid[end_pos_grid[1]][end_pos_grid[0]] = original_grid_value
-        
-        if path_grid:
-            if len(path_grid) > 1:
-                path_grid.pop()
+        for radius in range(1, 2): 
+            for dx in range(-radius, radius + 1):
+                for dy in range(-radius, radius + 1):
+                    if abs(dx) != radius and abs(dy) != radius:
+                        continue
+                    
+                    check_x = target_center_grid[0] + dx
+                    check_y = target_center_grid[1] + dy
 
-            self.path = [(x * sub_tile_size + sub_tile_size // 2, y * sub_tile_size + sub_tile_size // 2) for x, y in path_grid]
+                    if 0 <= check_x < len(grid[0]) and 0 <= check_y < len(grid) and grid[check_y][check_x] == 0:
+                        path = astar(grid, start_pos_grid, (check_x, check_y))
+                        if path:
+                            best_path = path
+                            best_target_pos = (check_x, check_y)
+                            break
+                if best_path: break
+            if best_path: break
+
+        if best_path and best_target_pos:
+            character.debug_target_pos = pygame.math.Vector2(
+                best_target_pos[0] * sub_tile_size + sub_tile_size // 2,
+                best_target_pos[1] * sub_tile_size + sub_tile_size // 2
+            )
+            if len(best_path) > 1:
+                best_path.pop(0)
+            self.path = [(x * sub_tile_size + sub_tile_size // 2, y * sub_tile_size + sub_tile_size // 2) for x, y in best_path]
+        else:
+            character.set_state(Idle(character))
 
     def update(self, character, dt):
         if not character.target:
             return Idle(character)
+
+        distance_to_target = (pygame.math.Vector2(character.target.rect.center) - pygame.math.Vector2(character.rect.center)).length()
+        if distance_to_target < TILE_SIZE * INTERACTION_DISTANCE:
+            character.vel = vec(0, 0)
+            chair_comp = character.target.get_component(ChairComponent)
+            if chair_comp and chair_comp.occupy(character):
+                character.chair = character.target
+                return Sitting(character)
+            else:
+                return Idle(character)
 
         if self.path:
             target_pos = self.path[0]
@@ -416,16 +440,6 @@ class MovingToTarget:
                 character.acc = direction_vec.normalize() * character.force
                 character.animate(f'walk_{character.get_direction()}', ANIMATION_SPEED_WALK * dt)
                 character.physics(dt, character.fric)
-
                 return None
         
-        distance_to_target = (pygame.math.Vector2(character.target.rect.center) - pygame.math.Vector2(character.rect.center)).length()
-        if distance_to_target < TILE_SIZE * 1.25:
-            chair_comp = character.target.get_component(ChairComponent)
-            if chair_comp and chair_comp.occupy(character):
-                character.chair = character.target
-                return Sitting(character)
-            else:
-                return Idle(character)
-        else:
-            return Idle(character)
+        return Idle(character)

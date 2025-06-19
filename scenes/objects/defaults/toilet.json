@@ -1,0 +1,49 @@
+{
+    "current_level": 1,
+    "saved_state": {
+        "toilet_1": {
+            "is_occupied": false,
+            "occupation_timer": 0
+        }
+    },
+    "levels": [
+        {
+            "level": 1,
+            "objects": [
+                {
+                    "type": "toilet",
+                    "id": "toilet_1",
+                    "x": 90,
+                    "y": 100,
+                    "animations": {
+                        "idle": [
+                            "toilet"
+                        ],
+                        "occupied": [
+                            "toilet"
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "level": 2,
+            "objects": [
+                {
+                    "type": "toilet",
+                    "id": "toilet_2",
+                    "x": 200,
+                    "y": 250,
+                    "animations": {
+                        "idle": [
+                            "toilet"
+                        ],
+                        "occupied": [
+                            "toilet"
+                        ]
+                    }
+                }
+            ]
+        }
+    ]
+}

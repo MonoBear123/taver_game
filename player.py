@@ -74,8 +74,8 @@ class Player(BaseCharacter):
 
         self.max_energy = PLAYER_STATE['max_energy']
         self.energy = PLAYER_STATE['energy']
-        self.low_energy_threshold = PLAYER_LOW_ENERGY_THRESHOLD
-        self.exhausted_threshold = PLAYER_EXHAUSTED_THRESHOLD
+        self.low_energy = LOW_ENERGY
+        self.exhausted = VERY_LOW_ENERGY
         
         self.sit_down_trigger = False
         self.chair = None
@@ -138,7 +138,7 @@ class Player(BaseCharacter):
         except ValueError:
             return
 
-        interaction_distance = TILE_SIZE * INTERACTION_DISTANCE_MULTIPLIER 
+        interaction_distance = TILE_SIZE * INTERACTION_DISTANCE
         distance = pygame.math.Vector2(self.rect.center).distance_to(nearest_obj.rect.center)
 
 
@@ -161,10 +161,10 @@ class Player(BaseCharacter):
         return False
         
     def get_energy_multiplier(self):
-        if self.energy <= self.exhausted_threshold:
-            return PLAYER_EXHAUSTED_MULTIPLIER
-        elif self.energy <= self.low_energy_threshold:
-            return PLAYER_LOW_ENERGY_MULTIPLIER
+        if self.energy <= self.exhausted:
+            return VERY_LOW_ENERGY
+        elif self.energy <= self.low_energy:
+            return LOW_ENERGY
         else:
             return 1.0 
 
@@ -178,13 +178,6 @@ class Player(BaseCharacter):
 
         self.inventory.update()
 
-    def draw(self, screen, offset):
-        screen.blit(self.image, self.rect.topleft - offset)
-        if self.game.debug:
-            offset_hitbox = self.hitbox.copy()
-            offset_hitbox.topleft -= offset
-            pygame.draw.rect(screen, (255, 0, 0), offset_hitbox, 2)
-    
     def input(self):
         self.move = {'left': False, 'right': False, 'up': False, 'down': False}
         

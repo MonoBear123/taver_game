@@ -48,31 +48,33 @@ class Camera(pygame.sprite.Group):
         group = self.scene.drawn_sprites
         dynamic_layers = ['objects', 'characters', 'interactive', 'decorations','windows']
         
-        layer_order_map = {layer: i for i, layer in enumerate(LAYERS)}
+        layer_order = {layer: i for i, layer in enumerate(LAYERS)}
         
-        dynamic_layer_index = min(layer_order_map[layer] for layer in dynamic_layers if layer in layer_order_map)
+        min_index = min(layer_order[layer] for layer in dynamic_layers if layer in layer_order)
 
         def sort_key(sprite):
             y_coord = sprite.rect.centery
             
             if sprite.z in dynamic_layers:
-                return (dynamic_layer_index, y_coord)
+                return (min_index, y_coord)
             
-            layer_index = layer_order_map.get(sprite.z, -1)
+            layer_index = layer_order[sprite.z]
             return (layer_index, y_coord)
 
         for sprite in sorted(list(group), key=sort_key):
             if self.visible_window.colliderect(sprite.rect):
-                if callable(sprite.draw):
-                    sprite.draw(screen, self.offset)
-                else:
-                    offset_pos = sprite.rect.topleft - self.offset
-                    screen.blit(sprite.image, offset_pos)
+                offset_pos = sprite.rect.topleft - self.offset
+                screen.blit(sprite.image, offset_pos)
 
-                if self.game.debug and sprite.z in dynamic_layers:
-                    if hasattr(sprite, 'hitbox'):
-                         self.hitbox_debugger(screen,sprite)
+                if self.game.debug:
+                    if hasattr(sprite, 'draw_debug'):
+                        sprite.draw_debug(screen, self.offset)
+                    elif sprite in self.scene.block_sprites:
+                        self.hitbox_debugger(screen, sprite)
                         
-                if self.game.debug and  sprite.debug_target_pos:
-                    target_pos = sprite.debug_target_pos - self.offset
-                    pygame.draw.circle(screen, (255, 0, 0), target_pos, 10)
+                    if hasattr(sprite, 'draw_bubble'):
+                        sprite.draw_bubble(screen, self.offset)
+
+                    if hasattr(sprite, 'debug_target_pos') and sprite.debug_target_pos:
+                        target_pos = sprite.debug_target_pos - self.offset
+                        pygame.draw.circle(screen, (255, 0, 0), target_pos, 10)

@@ -17,7 +17,7 @@ def _find_sprite_path(item_id: str) -> Optional[str]:
     return None
 
 
-def get_item_sprite(item_id: str, size: Tuple[int, int] | int = 32) -> Optional[pygame.Surface]:
+def get_item_sprite(item_id: str, size: int = 32) -> Optional[pygame.Surface]:
     if isinstance(size, int):
         size = (size, size)
     key = (item_id, size)

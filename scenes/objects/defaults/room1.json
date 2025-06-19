@@ -1,0 +1,22 @@
+{
+    "current_level": 1,
+    "saved_state": {},
+    "levels": [
+        {
+            "level": 1,
+            "objects": [
+                {
+                    "type": "bed",
+                    "id": "bed_1",
+                    "x": 192,
+                    "y": 200,
+                    "animations": {
+                        "idle": [
+                            "bed_2"
+                        ]
+                    }
+                }
+            ]
+        }
+    ]
+} 

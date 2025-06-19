@@ -7,6 +7,7 @@ from entity_component_system import (
     TableComponent, ChairComponent, WoodComponent
 )
 from config import TILE_SIZE
+from asset_loader import get_asset
 
 
 class ObjectFactory:
@@ -48,7 +49,7 @@ class ObjectFactory:
         if "animations" in obj_data:
             animations = {}
             for anim_name, frames in obj_data["animations"].items():
-                animations[anim_name] = [self.scene.game.get_asset(frame) for frame in frames]
+                animations[anim_name] = [get_asset(frame) for frame in frames]
         
         creator_map = {
             "stove": self._create_stove, 
@@ -71,11 +72,13 @@ class ObjectFactory:
             return entity
         return None
 
-    def _create_base_interactive(self, position, animations):
+    def _create_base_interactive(self, position, animations, is_blocking=True):
         groups = [
             self.scene.interactive_sprites, self.scene.drawn_sprites,
-            self.scene.update_sprites, self.scene.block_sprites
+            self.scene.update_sprites
         ]
+        if is_blocking:
+            groups.append(self.scene.block_sprites)
         
         base_image = animations.get('idle', [pygame.Surface((TILE_SIZE, TILE_SIZE))])[0]
         
@@ -89,7 +92,7 @@ class ObjectFactory:
     def _create_stove(self, position, animations, obj_data):
         entity = self._create_base_interactive(position, animations)
         stove = StoveComponent()
-        entity.add_component(InteractionComponent(radius=60, text="Нажмите E чтобы использовать печку"))
+        entity.add_component(InteractionComponent())
         entity.add_component(stove)
         entity.add_component(StateComponent(stove.save_state()))
         return entity
@@ -97,7 +100,7 @@ class ObjectFactory:
     def _create_storage(self, position, animations, obj_data):
         entity = self._create_base_interactive(position, animations)
         storage = StorageComponent()
-        entity.add_component(InteractionComponent(radius=60, text="Нажмите E чтобы открыть сундук"))
+        entity.add_component(InteractionComponent())
         entity.add_component(storage)
         entity.add_component(StateComponent(storage.save_state()))
         return entity
@@ -105,7 +108,7 @@ class ObjectFactory:
     def _create_toilet(self, position, animations, obj_data):
         entity = self._create_base_interactive(position, animations)
         toilet = ToiletComponent()
-        entity.add_component(InteractionComponent(radius=60, text="Нажмите E чтобы использовать туалет"))
+        entity.add_component(InteractionComponent())
         entity.add_component(toilet)
         entity.add_component(StateComponent(toilet.save_state()))
         return entity
@@ -113,7 +116,7 @@ class ObjectFactory:
     def _create_bed(self, position, animations, obj_data):
         entity = self._create_base_interactive(position, animations)
         bed = BedComponent()
-        entity.add_component(InteractionComponent(radius=60, text="Нажмите E чтобы отдохнуть"))
+        entity.add_component(InteractionComponent())
         entity.add_component(bed)
         entity.add_component(StateComponent(bed.save_state()))
         return entity
@@ -121,25 +124,24 @@ class ObjectFactory:
     def _create_table(self, position, animations, obj_data):
         entity = self._create_base_interactive(position, animations)
         table = TableComponent()
-        entity.add_component(InteractionComponent(radius=60, text="Нажмите E чтобы использовать стол"))
+        entity.add_component(InteractionComponent())
         entity.add_component(table)
         entity.add_component(StateComponent(table.save_state()))
         return entity
 
     def _create_chair(self, position, animations, obj_data):
-        entity = self._create_base_interactive(position, animations)
-        table_id = obj_data.get("table_id")
+        entity = self._create_base_interactive(position, animations, is_blocking=False)
+        table_id = obj_data.get("properties", {}).get("table_id")
         chair = ChairComponent(table_id=table_id)
-        entity.add_component(InteractionComponent(radius=60, text="Нажмите E чтобы сесть"))
+        entity.add_component(InteractionComponent())
         entity.add_component(chair)
         entity.add_component(StateComponent(chair.save_state()))
-        entity.remove(self.scene.block_sprites)
         return entity
 
     def _create_wood(self, position, animations, obj_data):
         entity = self._create_base_interactive(position, animations)
         wood = WoodComponent()
-        entity.add_component(InteractionComponent(radius=60, text="Нажмите E чтобы подобрать дрова"))
+        entity.add_component(InteractionComponent())
         entity.add_component(wood)
         entity.add_component(StateComponent(wood.save_state()))
         return entity

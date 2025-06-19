@@ -2,13 +2,11 @@ import pygame
 from room import room_manager
 from config import WIN_WIDTH, WIN_HEIGHT, FONT, TILE_SIZE, CURSOR_SIZE, INPUTS, COLOURS
 from game_time import game_time
-from state import SplashScreen, load_pygame, MainMenu
+from state import  SplashScreen, load_pygame
 import sys
 import os
 from drag_manager import drag_manager
 from ui_manager import ui_manager
-from recipe_manager import recipe_manager
-from item_manager import item_manager
 from player import Player
 
 
@@ -25,30 +23,22 @@ class Game:
         self.debug = True
 
         self.states = []
-        MainMenu(self).enter_state()
+        SplashScreen(self).enter_state()
 
     def save_game(self):
-        """Централизованная функция сохранения игры."""
-        # Сохранение состояния игрока
         player = Player.get_instance()
         if player:
             player.save_state()
 
-        # Сохранение состояния всех комнат
         for room in room_manager.rooms.values():
             room.save_state()
 
-        # Сохранение игрового времени
         game_time.save_state()
         
-        # Сохранение текущей сцены, чтобы знать, куда вернуться
         current_scene = self.get_current_state()
         if hasattr(current_scene, 'current_scene'):
             from config import PLAYER_STATE
             PLAYER_STATE['last_scene'] = current_scene.current_scene
-
-        print("--- ИГРА СОХРАНЕНА ---")
-
     def load_tmx(self, scene_name: str):
         if scene_name not in self.tmx_cache:
             self.tmx_cache[scene_name] = load_pygame(f'scenes/maps/{scene_name}.tmx')
