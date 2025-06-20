@@ -78,8 +78,7 @@ class DragManager:
                     if self.source_widget:
                         self.source_widget.finalize_pick(self.drag_slot, accepted, right)
 
-                if self.source_widget:
-                    self.source_widget.save_to_state()
+               
 
                 self.drag_slot = None
                 self.source_widget = None

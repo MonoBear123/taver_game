@@ -108,7 +108,7 @@ class TavernRoom(Room):
                 self.spawn_points.append((obj.x, obj.y))
         
         self.spawn_timer = NPC_SPAWN_INTERVAL
-        self.grid_scale = 4
+        self.grid_scale = 5
         self.sub_tile_size = TILE_SIZE // self.grid_scale
         self.chairs = None
         self.grid = None

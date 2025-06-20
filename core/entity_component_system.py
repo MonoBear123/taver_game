@@ -55,7 +55,7 @@ class CollisionComponent(Component):
         if self.entity.image:
             self.hitbox = self.entity.rect.copy()
             if self.shrink_hitbox:
-                self.hitbox.inflate_ip(-self.hitbox.width * 0.5, -self.hitbox.height * 0.5)
+                self.hitbox.inflate_ip(-self.hitbox.width * HITBOX_SCALE_W, -self.hitbox.height * HITBOX_SCALE_H)
 
 class ShapedCollisionComponent(Component):
     def __init__(self):
@@ -97,7 +97,18 @@ class AnimationComponent(Component):
             return
             
         self.time_accumulated += dt
-        if self.time_accumulated >= self.frame_duration:
+        
+        effective_frame_duration = self.frame_duration
+        if 'walk' in self.current_animation:
+            if move_comp := self.entity.get_component(CharacterMovementComponent):
+                speed = move_comp.vel.length()
+                base_speed = move_comp.speed
+                if speed > 1.0 and base_speed > 0:
+                    speed_factor = speed / base_speed
+                    speed_factor = max(0.25, min(speed_factor, 2.0))
+                    effective_frame_duration = self.frame_duration / speed_factor
+
+        if self.time_accumulated >= effective_frame_duration:
             self.time_accumulated = 0
             self.current_frame = (self.current_frame + 1) % len(self.animations[self.current_animation])
             
@@ -106,8 +117,6 @@ class AnimationComponent(Component):
                 current_anchor = sprite.rect.midbottom 
                 sprite.image = self.animations[self.current_animation][self.current_frame]
                 sprite.rect = sprite.image.get_rect(midbottom=current_anchor)
-                if self.entity.collision and self.entity.collision.hitbox:
-                    self.entity.collision.hitbox.center = sprite.rect.center
 
 class InteractionComponent(Component):
     def __init__(self, radius = 60, text = "Нажмите E для взаимодействия"):
@@ -588,7 +597,10 @@ class CharacterMovementComponent(Component):
             self.acc.y = self.move_direction.y * self.force
 
     def physics(self, dt):
-        self.vel = self.vel * (1 - self.friction) + self.acc * dt
+        self.acc.x += self.vel.x * self.friction
+        self.acc.y += self.vel.y * self.friction
+
+        self.vel += self.acc * dt
         
         if self.vel.length_squared() > self.speed ** 2:
             self.vel.scale_to_length(self.speed)
@@ -955,11 +967,7 @@ class MovingToTarget(BaseState):
         self.move_comp.move_direction.update(0, 0)
         self.move_comp.vel.update(0, 0)
         
-        if (chair_comp := self.entity.target.get_component(ChairComponent)) and chair_comp.occupy(self.entity):
-            if state_comp := self.entity.get_component(CharacterStateComponent):
-                state_comp.chair = self.entity.target
-            return Sitting(self.entity)
-
+        
         return Idle(self.entity)
 
 class ThoughtBubbleComponent(Component):

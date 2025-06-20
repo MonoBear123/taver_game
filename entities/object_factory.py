@@ -183,13 +183,16 @@ class ObjectFactory:
             return entity
         return None
 
-    def _create_base_interactive(self, position, animations, is_blocking=True):
+    def _create_base_interactive(self, position, animations, is_blocking=True, use_collision_shape=True):
         base_image = animations.get('idle', [pygame.Surface((TILE_SIZE, TILE_SIZE))])[0]
         
         entity = Entity()
         entity.is_blocking = is_blocking
         entity.add_component(SpriteComponent(base_image, position, layer='interactive'))
-        entity.add_component(ShapedCollisionComponent())
+        if use_collision_shape:
+            entity.add_component(ShapedCollisionComponent())
+        else:
+            entity.add_component(CollisionComponent(shrink_hitbox=True))
         if animations:
             entity.add_component(AnimationComponent(animations))
         return entity
@@ -224,7 +227,7 @@ class ObjectFactory:
         return entity
 
     def _create_table(self, position, animations, obj_data):
-        entity = self._create_base_interactive(position, animations)
+        entity = self._create_base_interactive(position, animations, use_collision_shape=False)
         entity.add_component(InteractionComponent())
         entity.add_component(TableComponent())
         entity.add_component(StateComponent())

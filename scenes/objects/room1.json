@@ -3,7 +3,7 @@
     "saved_state": {
         "bed_1": {
             "is_used": false,
-            "cooldown_timer": -0.012000000000011765
+            "cooldown_timer": 0
         }
     },
     "levels": [

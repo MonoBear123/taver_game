@@ -111,7 +111,7 @@
 </data>
  </layer>
  <objectgroup id="5" name="enteries">
-  <object id="7" name="kitchen_entry" x="263.084" y="480.417">
+  <object id="7" name="kitchen_entry" x="262.584" y="454.417">
    <point/>
   </object>
   <object id="8" name="toilet_entry" x="796.333" y="425.667">
