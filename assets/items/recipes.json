@@ -104,7 +104,7 @@
             "cooking_time": 40,
             "ingredients": {
                 "flour": 2,
-                "egg": 1,
+                "egg": 1, 
                 "strawberry": 3,
                 "sugar": 1
             },

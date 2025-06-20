@@ -33,7 +33,7 @@ def astar(grid, start, end):
             while current is not None:
                 path.append(current.position)
                 current = current.parent
-            return path[::-1]  # Return reversed path
+            return path[::-1]  
 
         (x, y) = current_node.position
         

@@ -42,10 +42,9 @@ class Camera(pygame.sprite.Group):
 
 
         
-    def draw(self,screen):
+    def draw(self,screen, group):
         screen.fill(COLOURS['dark_gray'])
         
-        group = self.scene.drawn_sprites
         dynamic_layers = ['objects', 'characters', 'interactive', 'decorations','windows']
         
         layer_order = {layer: i for i, layer in enumerate(LAYERS)}

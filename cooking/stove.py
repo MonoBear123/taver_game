@@ -1,17 +1,14 @@
-from typing import Dict, List, Optional, Any, Tuple
-from slot import InventorySlot
+from typing import Optional, Tuple
+from items.slot import InventorySlot
 import pygame
-from game_time import GameTimeManager
-from item_renderer import draw_item
 from config import INPUTS
-from drag_manager import DragManager
-from asset_loader import get_asset
-from recipe_manager import recipe_manager
-from item_manager import item_manager
+from utils.asset_loader import asset_loader
+from cooking.recipe_manager import recipe_manager
+from items.item_manager import item_manager
 
 
-class CookingInterface:
-    def __init__(self, stove_component, player, screen, *, pos=(210, 100), scale=1):
+class StoveInterface:
+    def __init__(self, stove_component, player, screen, *, pos=(210, 100)):
         self.stove = stove_component
         self.player = player
         self.screen = screen
@@ -21,14 +18,13 @@ class CookingInterface:
         self.show_recipes = False
         self.recipes_per_page = 4
         self.recipe_page = 0
-        self._pick_source_info: Optional[Tuple[str, Optional[int]]] = None
+        self._pick_source_info = None
 
         self.base_x, self.base_y = pos
-        self.scale = scale
 
-        def _x(val): return int(val * self.scale) + self.base_x
-        def _y(val): return int(val * self.scale) + self.base_y
-        def _s(val): return int(val * self.scale)
+        def _x(val): return int(val) + self.base_x
+        def _y(val): return int(val) + self.base_y
+        def _s(val): return int(val)
 
         self.window_rect = pygame.Rect(_x(0), _y(0), _s(220), _s(200))
         self.slot_size = _s(40)
@@ -41,7 +37,7 @@ class CookingInterface:
         self.progress_bar_rect = pygame.Rect(_x(142), _y(37), _s(25), _s(15))
         self.recipe_button_rect = pygame.Rect(_x(170), _y(135), _s(40), _s(40))
         
-        self.recipe_button_image = get_asset('assets/ui/recipe_book.png')
+        self.recipe_button_image = asset_loader.get_image('assets/ui/recipe_book.png')
         self.recipe_button_image = pygame.transform.scale(self.recipe_button_image, (self.recipe_button_rect.width, self.recipe_button_rect.height))
 
         self.recipe_window_rect = pygame.Rect(self.window_rect.left - 195, self.window_rect.y, _s(190), _s(200))
@@ -57,11 +53,9 @@ class CookingInterface:
     def update(self, dt, game_time):
         if not self.is_open:
             return
-        mouse_pos = INPUTS.get('mouse_pos')
-        if mouse_pos is None:
-            return
+        mouse_pos = INPUTS['mouse_pos']
 
-        if INPUTS.get('left_click'):
+        if INPUTS['left_click']:
             if self.recipe_button_rect.collidepoint(mouse_pos):
                 self.show_recipes = not self.show_recipes
                 INPUTS['left_click'] = False
@@ -70,7 +64,6 @@ class CookingInterface:
                     self.recipe_page -= 1
                 INPUTS['left_click'] = False
             elif self.show_recipes and self.next_button_rect.collidepoint(mouse_pos):
-                # Преобразуем в список для проверки длины
                 recipes_list = self.recipes
                 if isinstance(recipes_list, dict):
                     recipes_list = list(recipes_list.values())
@@ -94,44 +87,46 @@ class CookingInterface:
 
     def pick_item(self, mouse_pos, right_click):
         info = self._slot_under_cursor(mouse_pos)
-        if not info: return None
+        if not info:
+            return None
         slot_type, idx = info
         
         slot_to_pick = None
-        if slot_type == 'ingredient': slot_to_pick = self.ingredient_slots[idx]
-        elif slot_type == 'result': slot_to_pick = self.result_item
+        if slot_type == 'ingredient':
+            slot_to_pick = self.ingredient_slots[idx]
+        elif slot_type == 'result':
+            slot_to_pick = self.result_item
         
-        if slot_to_pick and not slot_to_pick.is_empty() and not slot_to_pick.is_ghost:
-            slot_to_pick.is_ghost = True
+        if slot_to_pick and not slot_to_pick.is_empty():
             self._pick_source_info = (slot_type, idx)
-            return InventorySlot(slot_to_pick.item_id, 1 if right_click else slot_to_pick.amount)
+            # Return a copy for the drag operation
+            return InventorySlot(slot_to_pick.item_id, slot_to_pick.amount)
         return None
 
     def drop_item(self, drag_slot, mouse_pos, right_click):
         info = self._slot_under_cursor(mouse_pos)
-        if not info: return False
+        if not info:
+            return False
         slot_type, idx = info
 
-        # Если бросаем предмет обратно в тот же слот, считаем это успехом, но ничего не делаем.
-        # finalize_pick корректно обработает эту ситуацию.
-        if self._pick_source_info == (slot_type, idx):
-            return True
+        # Prevent dropping onto the same slot it was picked from
+        if self._pick_source_info and self._pick_source_info == (slot_type, idx):
+            return True # Effectively a no-op, but successful
+
+        amount_to_move = 1 if right_click else drag_slot.amount
 
         if slot_type == 'ingredient':
             target_slot = self.ingredient_slots[idx]
-            amount_to_move = 1 if right_click else drag_slot.amount
-            if target_slot.is_empty():
-                target_slot.item_id = drag_slot.item_id
-                target_slot.add(amount_to_move)
-                drag_slot.remove(amount_to_move)
-                self.stove._sync_state()
-                return True
-            elif target_slot.item_id == drag_slot.item_id and target_slot.can_add(amount_to_move):
-                target_slot.add(amount_to_move)
-                drag_slot.remove(amount_to_move)
-                self.stove._sync_state()
-                return True
-        
+            if target_slot.is_empty() or target_slot.item_id == drag_slot.item_id:
+                moved_amount = min(amount_to_move, target_slot.max_stack - target_slot.amount)
+                if moved_amount > 0:
+                    if target_slot.is_empty():
+                        target_slot.item_id = drag_slot.item_id
+                    target_slot.add(moved_amount)
+                    drag_slot.remove(moved_amount)
+                    self.stove._sync_state()
+                    return True
+
         elif slot_type == 'fuel':
             item_info = item_manager.get_item_data(drag_slot.item_id)
             is_fuel = drag_slot.item_id == 'wood' or (item_info and item_info.get('type') == 'fuel')
@@ -149,30 +144,29 @@ class CookingInterface:
         source_info = self._pick_source_info
         if not source_info:
             return
-        
+
         slot_type, idx = source_info
         source_slot = None
         if slot_type == 'ingredient':
             source_slot = self.ingredient_slots[idx]
         elif slot_type == 'result':
             source_slot = self.result_item
+            
+        if not source_slot:
+             self._pick_source_info = None
+             return
 
-        if source_slot:
-            source_slot.is_ghost = False
-            if not accepted:
-                # Если перетаскивание не было принято (напр. бросили в пустое место), ничего не меняем.
-                pass
-            elif right_click:
-                # Правый клик: уменьшаем источник, только если предмет был успешно помещен (слот курсора опустел).
-                if final_drag_slot and final_drag_slot.amount == 0:
-                    source_slot.remove(1)
-            else:
-                # Левый клик: обновляем источник тем, что осталось в слоте курсора.
-                if final_drag_slot and final_drag_slot.amount > 0:
-                    source_slot.item_id = final_drag_slot.item_id
-                    source_slot.amount = final_drag_slot.amount
-                else:
-                    source_slot.clear()
+        # The drag_slot from pick_item was a copy. We need to update the original slot
+        # based on what happened to the copy (`final_drag_slot`).
+        if accepted:
+            # If the drop was successful, the final_drag_slot contains what's left.
+            if final_drag_slot and not final_drag_slot.is_empty():
+                source_slot.amount = final_drag_slot.amount
+            else: # All items were dropped
+                source_slot.clear()
+        else:
+            # If not accepted, no change to the source slot is needed as it was never modified.
+            pass
 
         self._pick_source_info = None
         self.stove._sync_state()

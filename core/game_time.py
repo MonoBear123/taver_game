@@ -1,4 +1,3 @@
-import pygame
 from config import PLAYER_STATE
 
 class GameTimeManager:
@@ -6,14 +5,13 @@ class GameTimeManager:
         self.hours = PLAYER_STATE.get('time_hours', 8)
         self.minutes = PLAYER_STATE.get('time_minutes', 0)
         self.day = PLAYER_STATE.get('day', 0) 
-        self.time_scale = 2
         self.days_of_week = [
             "Понедельник", "Вторник", "Среда", "Четверг",
             "Пятница", "Суббота", "Воскресенье"
         ]
 
     def update(self, dt):
-        self.minutes += dt * self.time_scale
+        self.minutes += dt 
         while self.minutes >= 60:
             self.minutes -= 60
             self.hours += 1
@@ -32,9 +30,9 @@ class GameTimeManager:
         self.hours = 8
         self.minutes = 0
         self.save_state()
-        print(f"ДЕБАГ: Время переведено на следующий день. Сейчас {self.get_time_string()}.")
 
     def get_time_string(self):
-        return f'{self.hours}:{int(self.minutes):02d}', self.days_of_week[self.day]
+        time_str = f"{int(self.hours):02}:{int(self.minutes):02}"
+        return time_str, self.days_of_week[self.day]
 
 game_time = GameTimeManager()

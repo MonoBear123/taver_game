@@ -123,7 +123,7 @@
   <object id="10" name="room2_entry" x="647.333" y="226.667">
    <point/>
   </object>
-  <object id="11" name="room1_entry" x="524" y="229">
+  <object id="11" name="room1_entry" x="551" y="209.5">
    <point/>
   </object>
   <object id="13" name="enter" x="381.166" y="723.167">

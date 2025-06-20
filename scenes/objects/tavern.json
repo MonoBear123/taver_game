@@ -1,22 +1,6 @@
 {
     "current_level": 1,
     "saved_state": {
-        "chair_1": {
-            "is_occupied": false,
-            "table_id": null
-        },
-        "chair_4": {
-            "is_occupied": false,
-            "table_id": null
-        },
-        "chair_3": {
-            "is_occupied": false,
-            "table_id": null
-        },
-        "chair_2": {
-            "is_occupied": false,
-            "table_id": null
-        },
         "table_1": {
             "is_used": false,
             "items_on_table": []
@@ -25,49 +9,13 @@
             "is_used": false,
             "items_on_table": []
         },
-        "chair_11": {
-            "is_occupied": false,
-            "table_id": null
-        },
-        "chair_12": {
-            "is_occupied": false,
-            "table_id": null
-        },
-        "chair_14": {
-            "is_occupied": false,
-            "table_id": null
-        },
         "table_5": {
             "is_used": false,
             "items_on_table": []
         },
-        "chair_15": {
-            "is_occupied": false,
-            "table_id": null
-        },
-        "chair_16": {
-            "is_occupied": false,
-            "table_id": null
-        },
-        "chair_17": {
-            "is_occupied": false,
-            "table_id": null
-        },
-        "chair_18": {
-            "is_occupied": false,
-            "table_id": null
-        },
         "table_6": {
             "is_used": false,
             "items_on_table": []
-        },
-        "chair_19": {
-            "is_occupied": false,
-            "table_id": null
-        },
-        "chair_20": {
-            "is_occupied": false,
-            "table_id": null
         }
     },
     "levels": [

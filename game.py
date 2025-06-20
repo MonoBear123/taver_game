@@ -1,13 +1,14 @@
 import pygame
-from room import room_manager
-from config import WIN_WIDTH, WIN_HEIGHT, FONT, TILE_SIZE, CURSOR_SIZE, INPUTS, COLOURS
-from game_time import game_time
-from state import  SplashScreen, load_pygame
+from entities.room import room_manager
+from config import WIN_WIDTH, WIN_HEIGHT, FONT, TILE_SIZE, INPUTS, PLAYER_STATE, reset_player_state
+from core.game_time import game_time
+from core.state import MainMenu,  load_pygame
 import sys
+from ui.drag_manager import drag_manager
+from ui.ui_manager import ui_manager
 import os
-from drag_manager import drag_manager
-from ui_manager import ui_manager
-from player import Player
+import shutil
+import json
 
 
 class Game:
@@ -20,25 +21,67 @@ class Game:
         self.fps = 60
         self.states = []
         self.tmx_cache = {}
-        self.debug = True
-
+        self.debug = False
+        
         self.states = []
-        SplashScreen(self).enter_state()
+        self._load_state()
+        MainMenu(self).enter_state()
+
+    def _load_state(self):
+        if os.path.exists('save.json'):
+            with open('save.json', 'r') as f:
+                try:
+                    save_data = json.load(f)
+                    PLAYER_STATE.update(save_data)
+                except json.JSONDecodeError:
+                    reset_player_state()
+
+    def new_game(self):
+        reset_player_state()
+        if os.path.exists('save.json'):
+            os.remove('save.json')
+
+        default_path = 'scenes/objects/defaults'
+        target_path = 'scenes/objects'
+        if os.path.exists(default_path):
+            for filename in os.listdir(default_path):
+                if filename.endswith('.json'):
+                    shutil.copy(os.path.join(default_path, filename), os.path.join(target_path, filename))
+        
+        room_manager.rooms.clear()
+        from core.state import Scene
+        Scene(self, 'tavern', 'enter').enter_state()
+
+    def load_game(self):
+        if self.save_exists():
+            last_scene = PLAYER_STATE.get('last_scene', 'tavern')
+            last_entry = PLAYER_STATE.get('last_entry_point', 'enter')
+            from core.state import Scene
+            Scene(self, last_scene, last_entry).enter_state()
+
+    def save_exists(self):
+        return os.path.exists('save.json')
 
     def save_game(self):
-        player = Player.get_instance()
-        if player:
-            player.save_state()
+        current_scene = self.get_current_state()
+        from core.state import Scene
+        if not isinstance(current_scene, Scene):
+            return
+
+        if hasattr(current_scene, 'player') and hasattr(current_scene.player, 'save_state'):
+            current_scene.player.save_state()
 
         for room in room_manager.rooms.values():
             room.save_state()
 
         game_time.save_state()
         
-        current_scene = self.get_current_state()
-        if hasattr(current_scene, 'current_scene'):
-            from config import PLAYER_STATE
-            PLAYER_STATE['last_scene'] = current_scene.current_scene
+        PLAYER_STATE['last_scene'] = current_scene.current_scene
+        PLAYER_STATE['last_entry_point'] = current_scene.entry_point
+
+        with open('save.json', 'w') as f:
+            json.dump(PLAYER_STATE, f, indent=4)
+
     def load_tmx(self, scene_name: str):
         if scene_name not in self.tmx_cache:
             self.tmx_cache[scene_name] = load_pygame(f'scenes/maps/{scene_name}.tmx')
@@ -49,28 +92,6 @@ class Game:
         rect = surf.get_rect(center = pos) if centralised else surf.get_rect(topleft = pos)
         self.screen.blit(surf,rect)
 
-    def custom_cursor(self,screen):
-        pygame.mouse.set_visible(False)
-        cursor_img = pygame.image.load('assets/cursor.png') 
-        cursor_img = pygame.transform.scale(cursor_img,CURSOR_SIZE)
-        cursor_rect = cursor_img.get_rect(center=pygame.mouse.get_pos())
-        cursor_img.set_alpha(200)
-        screen.blit(cursor_img,cursor_rect.center)
-
-    def get_images(self,path):
-        images = []
-        for file in os.listdir(path):
-            full_path = os.path.join(path,file)
-            img = pygame.image.load(full_path).convert_alpha()
-            images.append(img)
-        return images
-    
-    def get_animations(selt,path):
-        animations = {}
-        for file_name in os.listdir(path):
-            animations.update({file_name:[]})
-        return animations
-
     def get_inputs(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -79,6 +100,12 @@ class Game:
                 sys.exit()
 
             INPUTS['mouse_pos'] = pygame.mouse.get_pos()
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    INPUTS['left_click'] = True
+                if event.button == 3:
+                    INPUTS['right_click'] = True
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
@@ -98,17 +125,7 @@ class Game:
                     INPUTS['down'] = True
                 elif event.key == pygame.K_e:
                     INPUTS['interact'] = True
-                elif event.key == pygame.K_1:
-                    INPUTS["1"] = True
-                elif event.key == pygame.K_2:
-                    INPUTS["2"] = True
-                elif event.key == pygame.K_3:
-                    INPUTS["3"] = True
-                elif event.key == pygame.K_4:
-                    INPUTS["4"] = True
-                elif event.key == pygame.K_5:
-                    INPUTS["5"] = True
-
+               
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_SPACE:
                     INPUTS['space'] = False
@@ -124,45 +141,13 @@ class Game:
                     INPUTS['down'] = False
                 elif event.key == pygame.K_e:
                     INPUTS['interact'] = False
-                elif event.key == pygame.K_1:
-                    INPUTS["1"] = False
-                elif event.key == pygame.K_2:
-                    INPUTS["2"] = False
-                elif event.key == pygame.K_3:
-                    INPUTS["3"] = False
-                elif event.key == pygame.K_4:
-                    INPUTS["4"] = False
-                elif event.key == pygame.K_5:
-                    INPUTS["5"] = False
+                
 
-            if event.type == pygame.MOUSEWHEEL:
-                if event.y == 1:
-                    INPUTS['scroll_up'] = True
-                if event.y == -1:
-                    INPUTS['scroll_down'] = True
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:
-                    INPUTS['left_click'] = True
-                if event.button == 2:
-                    INPUTS['scroll_up'] = True
-                if event.button == 3:
-                    INPUTS['right_click'] = True
-                if event.button == 4:
-                    INPUTS['scroll_down'] = True
-
-            if event.type == pygame.MOUSEBUTTONUP:
-                if event.button == 1:
-                    INPUTS['left_click'] = False
-                if event.button == 2:
-                    INPUTS['scroll_up'] = False    
-                if event.button == 3:
-                    INPUTS['right_click'] = False
-                if event.button == 4:
-                    INPUTS['scroll_down'] = False
-
+            
     def reset_inputs(self):
         for key in INPUTS:
-            INPUTS[key] = False
+            if key != 'mouse_pos':
+                INPUTS[key] = False
 
     def loop(self):
         while self.running:
@@ -174,8 +159,6 @@ class Game:
             
             current_state = self.get_current_state()
             current_state.update(dt)
-            
-            self.screen.fill(COLOURS['black'])
             
             ui_manager.set_context(self.screen, current_state)
             

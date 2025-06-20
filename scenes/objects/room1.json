@@ -1,6 +1,11 @@
 {
     "current_level": 1,
-    "saved_state": {},
+    "saved_state": {
+        "bed_1": {
+            "is_used": false,
+            "cooldown_timer": -0.012000000000011765
+        }
+    },
     "levels": [
         {
             "level": 1,
@@ -19,4 +24,4 @@
             ]
         }
     ]
-} 
+}

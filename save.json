@@ -1,0 +1,118 @@
+{
+    "inventory": {
+        "width": 5,
+        "height": 4,
+        "slots": [
+            {
+                "item_id": null,
+                "amount": 0,
+                "max_stack": 24
+            },
+            {
+                "item_id": null,
+                "amount": 0,
+                "max_stack": 24
+            },
+            {
+                "item_id": null,
+                "amount": 0,
+                "max_stack": 24
+            },
+            {
+                "item_id": null,
+                "amount": 0,
+                "max_stack": 24
+            },
+            {
+                "item_id": null,
+                "amount": 0,
+                "max_stack": 24
+            },
+            {
+                "item_id": null,
+                "amount": 0,
+                "max_stack": 24
+            },
+            {
+                "item_id": null,
+                "amount": 0,
+                "max_stack": 24
+            },
+            {
+                "item_id": null,
+                "amount": 0,
+                "max_stack": 24
+            },
+            {
+                "item_id": null,
+                "amount": 0,
+                "max_stack": 24
+            },
+            {
+                "item_id": null,
+                "amount": 0,
+                "max_stack": 24
+            },
+            {
+                "item_id": null,
+                "amount": 0,
+                "max_stack": 24
+            },
+            {
+                "item_id": null,
+                "amount": 0,
+                "max_stack": 24
+            },
+            {
+                "item_id": null,
+                "amount": 0,
+                "max_stack": 24
+            },
+            {
+                "item_id": null,
+                "amount": 0,
+                "max_stack": 24
+            },
+            {
+                "item_id": null,
+                "amount": 0,
+                "max_stack": 24
+            },
+            {
+                "item_id": null,
+                "amount": 0,
+                "max_stack": 24
+            },
+            {
+                "item_id": null,
+                "amount": 0,
+                "max_stack": 24
+            },
+            {
+                "item_id": null,
+                "amount": 0,
+                "max_stack": 24
+            },
+            {
+                "item_id": null,
+                "amount": 0,
+                "max_stack": 24
+            },
+            {
+                "item_id": null,
+                "amount": 0,
+                "max_stack": 24
+            }
+        ]
+    },
+    "position": null,
+    "last_scene": "room1",
+    "last_entry_point": "room1_entry",
+    "energy": 100,
+    "max_energy": 100,
+    "time_hours": 8,
+    "time_minutes": 0,
+    "day": 2,
+    "x": 142,
+    "y": 197
+}
